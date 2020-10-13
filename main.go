@@ -6,6 +6,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/YanxinTang/clipboard-online/action"
 	"github.com/lxn/walk"
@@ -13,8 +15,25 @@ import (
 
 var app *Application
 
+var execPath string
+var execFullPath string
+
+func init() {
+	execFullPath = os.Args[0]
+	execPath = filepath.Dir(execFullPath)
+}
+
 func main() {
 	var err error
+
+	logFileFullPath := execPath + "/" + LogFile
+	f, err := os.OpenFile(logFileFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
 	app, err = NewApplication()
 	if err != nil {
 		log.Fatal(err)
@@ -34,18 +53,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	autoRunAction, err := action.NewAutoRunAction()
+	if err != nil {
+		log.Fatal(err)
+	}
 	exitAction, err := action.NewExitAction()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := app.AddActions(exitAction); err != nil {
+	if err := app.AddActions(autoRunAction, exitAction); err != nil {
 		log.Fatal(err)
 	}
 
 	if err := app.ni.SetVisible(true); err != nil {
 		log.Fatal(err)
 	}
-
 	app.RunHTTPServer()
 	app.Run()
 }

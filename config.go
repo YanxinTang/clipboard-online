@@ -1,6 +1,7 @@
 package main
 
-const ConfigFilePath = "config.json"
+const ConfigFile = "config.json"
+const LogFile = "log.txt"
 
 type Config struct {
 	Port string `json:"port"`

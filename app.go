@@ -71,17 +71,18 @@ func NewApplication() (*Application, error) {
 }
 
 func loadConfig() (*Config, error) {
-	if isExistFile(ConfigFilePath) {
-		return loadConfigFromFile(ConfigFilePath)
+	configFileFullPath := execPath + "/" + ConfigFile
+	if isExistFile(configFileFullPath) {
+		return loadConfigFromFile(configFileFullPath)
 	}
-	if err := createConfigFile(ConfigFilePath); err != nil {
+	if err := createConfigFile(configFileFullPath); err != nil {
 		return nil, err
 	}
 	return &DefaultConfig, nil
 }
 
 func loadConfigFromFile(path string) (*Config, error) {
-	configBytes, err := ioutil.ReadFile("config.json")
+	configBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
