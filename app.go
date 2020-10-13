@@ -39,6 +39,15 @@ func (app *Application) BeforeExit() {
 	app.ni.Dispose()
 }
 
+func (app *Application) AddActions(actions ...*walk.Action) error {
+	for _, action := range actions {
+		if err := app.ni.ContextMenu().Actions().Add(action); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func NewApplication() (*Application, error) {
 	app := new(Application)
 	var err error

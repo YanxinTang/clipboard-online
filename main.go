@@ -7,6 +7,7 @@ package main
 import (
 	"log"
 
+	"github.com/YanxinTang/clipboard-online/action"
 	"github.com/lxn/walk"
 )
 
@@ -33,13 +34,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	exitAction := walk.NewAction()
-	if err := exitAction.SetText("退出"); err != nil {
+	exitAction, err := action.NewExitAction()
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	if err := app.ni.ContextMenu().Actions().Add(exitAction); err != nil {
+	if err := app.AddActions(exitAction); err != nil {
 		log.Fatal(err)
 	}
 
