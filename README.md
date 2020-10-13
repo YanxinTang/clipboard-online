@@ -5,9 +5,11 @@ clipboard-online is an application to share cilpboard text between Windows and i
 ## Download
 
 1. Directly download
+
     Ahho, not complete...
 
 2. From source code(only windows now)
+
     Before you build, make sure you have installed golang. If not, maybe you need [this](https://golang.org/dl/)
     - `git clone git@github.com:YanxinTang/clipboard-online.git`
     - `cd clipboard-online`
