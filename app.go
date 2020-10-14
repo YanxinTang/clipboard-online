@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/lxn/walk"
+	log "github.com/sirupsen/logrus"
 )
 
 type Application struct {
@@ -21,8 +21,8 @@ func (app *Application) RunHTTPServer() {
 	go func() {
 		router := router()
 		if err := http.ListenAndServe(":"+app.config.Port, router); err != nil {
-			log.Print(err)
 			app.ni.ShowError("HTTP Server 启动失败", "您的应用可能不能正常运行")
+			log.WithError(err).Error("failed to start http server")
 			return
 		}
 		for range app.serverChan {
