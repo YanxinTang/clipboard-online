@@ -18,26 +18,36 @@ var app *Application
 
 var execPath string
 var execFullPath string
+var config *Config
+var mode string = "debug"
 
 func init() {
 	execFullPath = os.Args[0]
 	execPath = filepath.Dir(execFullPath)
-	log.SetFormatter(&logrus.TextFormatter{
-		ForceColors: true,
-	})
+
+	var err error
+	configFilePath := filepath.Join(execPath, ConfigFile)
+	config, err = loadConfig(configFilePath)
+	if err != nil {
+		log.WithError(err).Warn("failed to load config")
+	}
+	log.SetLevel(config.LogLevel)
+
+	if mode == "debug" {
+		log.SetFormatter(&logrus.TextFormatter{ForceColors: true})
+	} else {
+		logFilePath := filepath.Join(execPath, LogFile)
+		f, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			log.WithError(err).Fatal("failed to open log file")
+		}
+		log.SetOutput(f)
+	}
 }
 
 func main() {
 	var err error
-	// logFileFullPath := execPath + "/" + LogFile
-	// f, err := os.OpenFile(logFileFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	// if err != nil {
-	// 	log.Fatalf("error opening file: %v", err)
-	// }
-	// defer f.Close()
-	// log.SetOutput(f)
-
-	app, err = NewApplication()
+	app, err = NewApplication(config)
 	if err != nil {
 		log.WithError(err).Fatal("failed to create applicaton")
 	}

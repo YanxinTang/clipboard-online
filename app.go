@@ -1,10 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/lxn/walk"
 	log "github.com/sirupsen/logrus"
@@ -48,13 +45,9 @@ func (app *Application) AddActions(actions ...*walk.Action) error {
 	return nil
 }
 
-func NewApplication() (*Application, error) {
+func NewApplication(config *Config) (*Application, error) {
 	app := new(Application)
 	var err error
-	config, err := loadConfig()
-	if err != nil {
-		return nil, err
-	}
 	app.config = config
 	app.MainWindow, err = walk.NewMainWindow()
 	if err != nil {
@@ -68,45 +61,4 @@ func NewApplication() (*Application, error) {
 
 	app.serverChan = make(chan string)
 	return app, nil
-}
-
-func loadConfig() (*Config, error) {
-	configFileFullPath := execPath + "/" + ConfigFile
-	if isExistFile(configFileFullPath) {
-		return loadConfigFromFile(configFileFullPath)
-	}
-	if err := createConfigFile(configFileFullPath); err != nil {
-		return nil, err
-	}
-	return &DefaultConfig, nil
-}
-
-func loadConfigFromFile(path string) (*Config, error) {
-	configBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var config Config
-	if err := json.Unmarshal(configBytes, &config); err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-func createConfigFile(path string) error {
-	defaultConfigJson, err := json.MarshalIndent(DefaultConfig, "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(path, []byte(defaultConfigJson), 0644); err != nil {
-		return err
-	}
-	return nil
-}
-
-func isExistFile(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
