@@ -2,8 +2,6 @@ name: Release Package
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 
