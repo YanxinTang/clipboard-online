@@ -20,6 +20,7 @@ var execPath string
 var execFullPath string
 var config *Config
 var mode string = "debug"
+var version string = ""
 
 func init() {
 	execFullPath = os.Args[0]
@@ -62,7 +63,7 @@ func main() {
 		log.WithError(err).Fatal("failed to set icon")
 	}
 
-	if err := app.ni.SetToolTip("clipboard-online"); err != nil {
+	if err := app.ni.SetToolTip("clipboard-online " + version + " :" + config.Port); err != nil {
 		log.WithError(err).Fatal("failed to set tooltip")
 	}
 
