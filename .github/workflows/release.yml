@@ -1,0 +1,40 @@
+name: Release Package
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - run: go get github.com/akavel/rsrc
+      - name: Build project
+        run: /bin/bash build.sh
+        shell: bash
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/clipboard-online.exe
+          asset_name: clipboard-online.exe
+          asset_content_type: application/exe

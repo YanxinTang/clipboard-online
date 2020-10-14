@@ -4,6 +4,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 
 ROOT=`pwd`
 RELEASE_DIR="$ROOT/release"
+ENV_GOAPTH=`go env GOPATH`
 
 prog=$(grep "^module .*$" go.mod | sed -r "s/^module .*\/(.*)$/\1/")
 version=$(if [[ `git describe --exact-match 2>/dev/null` != "" ]]; then git describe --tags --abbrev=0; else git log --pretty=format:'%h' -1; fi)
@@ -22,7 +23,7 @@ while getopts "hd" arg; do
 done
 
 function build() {
-  rsrc -manifest clipboard-online.manifest -ico app.ico -o rsrc.syso
+  $ENV_GOAPTH/bin/rsrc.exe -manifest clipboard-online.manifest -ico app.ico -o rsrc.syso
   if [[ $mode == "debug" ]]; then
     build_debug
   else
