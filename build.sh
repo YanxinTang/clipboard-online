@@ -34,12 +34,12 @@ function build() {
 
 function build_debug() {
   echo "build: debug"
-  go build -ldflags="--X 'main.mode=$mode' -X 'main.version=$version'" -o $output
+  go build -ldflags="-X 'main.mode=$mode' -X 'main.version=$version'" -o $output
 }
 
 function build_release() {
   echo "build: release"
-  go build -ldflags="-H windowsgui -X 'main.mode=$mode' -X 'main.version=$version'" -o $output
+  go build -ldflags="-s -w -H windowsgui -X 'main.mode=$mode' -X 'main.version=$version'" -o $output
 }
 
 # Start build
