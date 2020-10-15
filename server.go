@@ -13,8 +13,8 @@ import (
 
 func router() *httprouter.Router {
 	router := httprouter.New()
-	router.GET("/clipboard", getHandler)
-	router.POST("/clipboard", setHandler)
+	router.GET("/", getHandler)
+	router.POST("/", setHandler)
 	return router
 }
 
