@@ -15,6 +15,7 @@ func router() *httprouter.Router {
 	router := httprouter.New()
 	router.GET("/", getHandler)
 	router.POST("/", setHandler)
+	router.NotFound = http.HandlerFunc(notFoundHandler)
 	return router
 }
 
@@ -62,4 +63,10 @@ func setHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.WriteHeader(http.StatusOK)
 	requestLogger.WithField("text", bodystr).Info("set clipboard text")
 	return
+}
+
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	requestLogger := log.WithFields(log.Fields{"request_id": rand.Int(), "user_ip": r.RemoteAddr})
+	requestLogger.Info("404 not found")
+	w.WriteHeader(http.StatusNotFound)
 }
