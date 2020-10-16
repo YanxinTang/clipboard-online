@@ -98,14 +98,14 @@ func setHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		_, _ = io.Copy(file, rd)
 
 		if contentType == typeMedia {
-			notify = "[图片媒体] 路径已复制到剪贴板"
+			notify = "[图片媒体] 已复制到剪贴板"
 		} else {
-			notify = "[文件] 路径已复制到剪贴板"
+			notify = "[文件] 已复制到剪贴板"
 		}
 
 		setLastFilename(filename)
 
-		if err := walk.Clipboard().SetText(path); err != nil {
+		if err := utils.Clipboard().SetFile(path); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			requestLogger.WithError(err).Warn("failed to set clipboard")
 			return
