@@ -2,24 +2,39 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"os"
-
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"os"
 )
 
 const ConfigFile = "config.json"
 const LogFile = "log.txt"
 
+const defaultTempDir = "./temp"
+
 type Config struct {
 	Port     string       `json:"port"`
 	LogLevel logrus.Level `json:"logLevel"`
+	TempDir  *string      `json:"tempDir"`
+}
+
+func (c *Config) GetTempDir() string {
+	if c.TempDir == nil {
+		return defaultTempDir
+	}
+
+	return *c.TempDir
 }
 
 var DefaultConfig = Config{
 	Port:     "8086",
 	LogLevel: log.WarnLevel,
+	TempDir:  ToPtrString(defaultTempDir),
+}
+
+func ToPtrString(str string) *string {
+	return &str
 }
 
 func loadConfig(path string) (*Config, error) {
