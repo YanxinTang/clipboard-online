@@ -25,16 +25,29 @@ func router() *httprouter.Router {
 
 func getHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	requestLogger := log.WithFields(log.Fields{"request_id": rand.Int(), "user_ip": r.RemoteAddr})
-	str, err := walk.Clipboard().Text()
+
+	contentType, err := utils.Clipboard().ContentType()
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = io.WriteString(w, "")
-		requestLogger.WithError(err).Warn("failed to get clipboard")
+		requestLogger.WithError(err).Info("failed to get content type of clipboard")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = io.WriteString(w, str)
-	requestLogger.Info("get clipboard text")
+	requestLogger.WithField("content type", contentType).Info("get content type of clipboard")
+
+	if contentType == typeText {
+		str, err := walk.Clipboard().Text()
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, "")
+			requestLogger.WithError(err).Warn("failed to get clipboard")
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, str)
+		requestLogger.Info("get clipboard text")
+	} else if contentType == typeFile {
+		utils.Clipboard().Files()
+		requestLogger.Info("get clipboard files")
+	}
 }
 
 const (
