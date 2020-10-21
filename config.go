@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const ConfigFile = "config.json"

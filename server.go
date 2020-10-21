@@ -2,16 +2,17 @@ package main
 
 import (
 	"bufio"
-	"github.com/YanxinTang/clipboard-online/utils"
-	"github.com/julienschmidt/httprouter"
-	"github.com/lxn/walk"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/YanxinTang/clipboard-online/utils"
+	"github.com/julienschmidt/httprouter"
+	"github.com/lxn/walk"
+	log "github.com/sirupsen/logrus"
 )
 
 func router() *httprouter.Router {

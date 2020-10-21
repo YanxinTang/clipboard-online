@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/lxn/walk"
-	"github.com/lxn/win"
 	"syscall"
 	"unsafe"
+
+	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 var clipboard ClipboardService
