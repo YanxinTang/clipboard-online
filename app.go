@@ -1,8 +1,7 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,8 +15,10 @@ type Application struct {
 
 func (app *Application) RunHTTPServer() {
 	go func() {
-		router := router()
-		if err := http.ListenAndServe(":"+app.config.Port, router); err != nil {
+		engin := gin.Default()
+		setupRoute(engin)
+
+		if err := engin.Run(":" + app.config.Port); err != nil {
 			app.ni.ShowError("HTTP Server 启动失败", "您的应用可能不能正常运行")
 			log.WithError(err).Error("failed to start http server")
 			return

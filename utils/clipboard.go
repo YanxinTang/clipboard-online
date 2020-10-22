@@ -173,13 +173,18 @@ type DROPFILES struct {
 	fWide  bool
 }
 
-// SetFile sets the current file drop data of the clipboard.
-func (c *ClipboardService) SetFile(s string) error {
+// SetFiles sets the current file drop data of the clipboard.
+func (c *ClipboardService) SetFiles(paths []string) error {
 	return c.withOpenClipboard(func() error {
-		utf16, err := syscall.UTF16FromString(s)
-		if err != nil {
-			return err
+		utf16 := []uint16{}
+		for _, path := range paths {
+			_utf16, err := syscall.UTF16FromString(path)
+			if err != nil {
+				return err
+			}
+			utf16 = append(utf16, _utf16...)
 		}
+		utf16 = append(utf16, uint16(0))
 
 		size := unsafe.Sizeof(DROPFILES{}) + uintptr((len(utf16)+2)*2)
 

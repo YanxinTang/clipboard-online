@@ -65,7 +65,8 @@ func createConfigFile(path string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path, []byte(defaultConfigJSON), 0644); err != nil {
+
+	if err := ioutil.WriteFile(path, []byte(defaultConfigJSON), 0744); err != nil {
 		return err
 	}
 	return nil
