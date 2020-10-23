@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/YanxinTang/clipboard-online/action"
+	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -43,6 +44,7 @@ func init() {
 			log.WithError(err).Fatal("failed to open log file")
 		}
 		log.SetOutput(f)
+		gin.SetMode(gin.ReleaseMode)
 	}
 }
 

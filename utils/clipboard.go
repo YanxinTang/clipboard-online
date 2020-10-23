@@ -161,7 +161,6 @@ func (c *ClipboardService) SetText(s string) error {
 		}
 
 		// The system now owns the memory referred to by hMem.
-
 		return nil
 	})
 }
@@ -176,6 +175,7 @@ type DROPFILES struct {
 // SetFiles sets the current file drop data of the clipboard.
 func (c *ClipboardService) SetFiles(paths []string) error {
 	return c.withOpenClipboard(func() error {
+		// https://docs.microsoft.com/en-us/windows/win32/shell/clipboard#cf_hdrop
 		utf16 := []uint16{}
 		for _, path := range paths {
 			_utf16, err := syscall.UTF16FromString(path)

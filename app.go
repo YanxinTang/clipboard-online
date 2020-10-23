@@ -15,7 +15,7 @@ type Application struct {
 
 func (app *Application) RunHTTPServer() {
 	go func() {
-		engin := gin.Default()
+		engin := gin.New()
 		setupRoute(engin)
 
 		if err := engin.Run(":" + app.config.Port); err != nil {

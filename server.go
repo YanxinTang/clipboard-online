@@ -2,89 +2,163 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/YanxinTang/clipboard-online/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/lxn/walk"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	typeText  = "text"
-	typeFile  = "file"
-	typeMedia = "media"
+	apiVersion = "1"
+	typeText   = "text"
+	typeFile   = "file"
+	typeMedia  = "media"
 )
 
 func setupRoute(engin *gin.Engine) {
-	// engin.GET("/", getHandler)
+	engin.Use(clientName(), requestID(), logger(), gin.Recovery(), apiVersionChecker())
+	engin.GET("/", getHandler)
 	engin.POST("/", setHandler)
 	engin.NoRoute(notFoundHandler)
 }
 
-// func getHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-// 	requestLogger := log.WithFields(log.Fields{"request_id": rand.Int(), "user_ip": r.RemoteAddr})
+func clientName() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		urlEncodedClientName := c.GetHeader("X-Client-Name")
+		clientName, err := url.PathUnescape(urlEncodedClientName)
+		if err != nil {
+			clientName = "匿名设备"
+		}
+		if clientName == "" {
+			clientName = "匿名设备"
+		}
+		c.Set("clientName", clientName)
+		c.Next()
+	}
+}
 
-// 	contentType, err := utils.Clipboard().ContentType()
-// 	if err != nil {
-// 		requestLogger.WithError(err).Info("failed to get content type of clipboard")
-// 		return
-// 	}
-// 	requestLogger.WithField("content type", contentType).Info("get content type of clipboard")
+func requestID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("requestID", "ID")
+		c.Next()
+	}
+}
 
-// 	if contentType == typeText {
-// 		str, err := walk.Clipboard().Text()
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			_, _ = io.WriteString(w, "")
-// 			requestLogger.WithError(err).Warn("failed to get clipboard")
-// 			return
-// 		}
-// 		writeJSON(w, H{
-// 			"type": "text",
-// 			"data": str,
-// 		})
-// 		requestLogger.Info("get clipboard text")
-// 		return
-// 	}
+func apiVersionChecker() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		version := c.GetHeader("X-API-Version")
+		if version == apiVersion {
+			c.Next()
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "接口版本不匹配，请升级您的捷径",
+		})
+	}
+}
 
-// 	if contentType == typeFile {
-// 		filenames, err := utils.Clipboard().Files()
-// 		if err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			return
-// 		}
+func logger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		start := time.Now()
+		c.Next()
+		duration := time.Since(start)
+		clientIP := c.ClientIP()
+		statusCode := c.Writer.Status()
+		requestID := c.GetString("requestID")
+		clientName := c.GetString("clientName")
+		requestLogger := log.WithFields(logrus.Fields{
+			"requestID":  requestID,
+			"method":     c.Request.Method,
+			"statusCode": statusCode,
+			"clientIP":   clientIP,
+			"path":       path,
+			"duration":   duration,
+			"clientName": clientName,
+		})
 
-// 		type ResponseFile struct {
-// 			Name    string `json:"name"`
-// 			Content string `json:"content"`
-// 		}
+		if statusCode >= http.StatusInternalServerError {
+			requestLogger.Error()
+		} else if statusCode >= http.StatusBadRequest {
+			requestLogger.Warn()
+		} else {
+			requestLogger.Info()
+		}
+	}
+}
 
-// 		type ResponseFiles []ResponseFile
+type ResponseFile struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+}
 
-// 		responseFiles := make([]ResponseFile, 0, len(filenames))
-// 		for _, path := range filenames {
-// 			base64, err := readBase64FromFile(path)
-// 			if err != nil {
-// 				log.WithError(err).WithField("filepath", path).Warning("read base64 from file failed")
-// 				continue
-// 			}
-// 			responseFiles = append(responseFiles, ResponseFile{filepath.Base(path), base64})
-// 		}
+type ResponseFiles []ResponseFile
 
-// 		writeJSON(w, H{
-// 			"type": "file",
-// 			"data": responseFiles,
-// 		})
-// 		requestLogger.Info("get clipboard files")
-// 		return
-// 	}
-// 	w.WriteHeader(http.StatusBadRequest)
-// }
+func getHandler(c *gin.Context) {
+	logger := log.WithField("requestID", c.GetString("requestID"))
+	contentType, err := utils.Clipboard().ContentType()
+	if err != nil {
+		logger.WithError(err).Info("failed to get content type of clipboard")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if contentType == typeText {
+		str, err := walk.Clipboard().Text()
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			logger.WithError(err).Warn("failed to get clipboard")
+			return
+		}
+		logger.Info("get clipboard text")
+		c.JSON(http.StatusOK, gin.H{
+			"type": "text",
+			"data": str,
+		})
+		defer sendCopyNotification(logger, c.GetString("clientName"), str)
+		return
+	}
+
+	if contentType == typeFile {
+		// get path of files from clipboard
+		filenames, err := utils.Clipboard().Files()
+		if err != nil {
+			logger.WithError(err).Warn("failed to get path of files from clipboard")
+			c.Status(http.StatusBadRequest)
+			return
+		}
+
+		responseFiles := make([]ResponseFile, 0, len(filenames))
+		for _, path := range filenames {
+			base64, err := readBase64FromFile(path)
+			if err != nil {
+				log.WithError(err).WithField("filepath", path).Warning("read base64 from file failed")
+				continue
+			}
+			responseFiles = append(responseFiles, ResponseFile{filepath.Base(path), base64})
+		}
+		logger.Info("get clipboard files")
+
+		c.JSON(http.StatusOK, gin.H{
+			"type": "file",
+			"data": responseFiles,
+		})
+		defer sendCopyNotification(logger, c.GetString("clientName"), "[文件] 被复制")
+		return
+	}
+	c.JSON(http.StatusBadRequest, gin.H{"error": "无法识别剪切板内容"})
+}
 
 func readBase64FromFile(path string) (string, error) {
 	fileBytes, err := ioutil.ReadFile(path)
@@ -94,155 +168,118 @@ func readBase64FromFile(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(fileBytes), nil
 }
 
-type Body struct {
-	Type               string `json:"type"`
-	NamesString        string `json:"names"`
-	EncodedFilesString string `json:"files"`
-}
+// Set clipboard handler
 
-type ByteFile struct {
-	Name  string
-	Bytes []byte
-}
-
-func (b *Body) Names() []string {
-	return strings.Split(b.NamesString, "\n")
-}
-
-func (b *Body) ByteFiles() []ByteFile {
-	encodedFiles := strings.Split(b.EncodedFilesString, "\n")
-	byteFiles := make([]ByteFile, 0, len(encodedFiles))
-	names := b.Names()
-	for i, encodedFile := range encodedFiles {
-		fileBytes, err := base64.StdEncoding.DecodeString(encodedFile)
-		if err != nil {
-			log.WithError(err).Warn("failed to decode file base64")
-			continue
-		}
-		byteFiles = append(byteFiles, ByteFile{names[i], fileBytes})
-	}
-	return byteFiles
+// TextBody is a struct of request body when iOS send files to windows
+type TextBody struct {
+	Text string `json:"text"`
 }
 
 func setHandler(c *gin.Context) {
-	requestLogger := log.WithFields(log.Fields{"request_id": rand.Int(), "user_ip": c.Request.RemoteAddr})
-	cleanTempFile()
+	requestLogger := log.WithField("requestID", c.GetString("requestID"))
+	contentType := c.GetHeader("X-Content-Type")
+	if contentType == typeText {
+		setTextHandler(c, requestLogger)
+		return
+	}
 
-	var body Body
+	setFileHandler(c, requestLogger)
+}
+
+func setTextHandler(c *gin.Context, logger *logrus.Entry) {
+	var body TextBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		requestLogger.WithError(err).Warn("failed to bind body")
+		logger.WithError(err).Warn("failed to bind file body")
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	if body.Type == typeText {
-		c.Status(http.StatusOK)
+	if err := utils.Clipboard().SetText(body.Text); err != nil {
+		logger.WithError(err).Warn("failed to set clipboard")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	if body.Type == typeFile {
-		byteFiles := body.ByteFiles()
-		paths := make([]string, 0, len(byteFiles))
-		for _, byteFile := range byteFiles {
-			path := getTempFilePath(string(byteFile.Name))
-			if err := ioutil.WriteFile(path, byteFile.Bytes, 0644); err != nil {
-				requestLogger.WithError(err).WithField("path", path).Warn("failed to create file")
-				continue
-			}
-			paths = append(paths, path)
-		}
+	var notify string = "粘贴内容为空"
+	if body.Text != "" {
+		notify = body.Text
+	}
+	defer sendPasteNotification(logger, c.GetString("clientName"), notify)
+	logger.WithField("text", body.Text).Info("set clipboard text")
+	c.Status(http.StatusOK)
+}
 
-		if err := utils.Clipboard().SetFiles(paths); err != nil {
-			requestLogger.WithError(err).Warn("failed to set clipboard")
-			c.Status(http.StatusBadRequest)
-			return
-		}
+// FileBody is a struct of request body when iOS send files to windows
+type FileBody struct {
+	NamesString        string `json:"names"` // Name1\nName2...
+	EncodedFilesString string `json:"files"` // File1Base64\nFile2Base64...
+}
 
-		requestLogger.WithField("paths", paths).Info("set clipboard file")
-		c.Status(http.StatusOK)
+// ByteFile is a struct to save uploaded file in memory
+type ByteFile struct {
+	Name  string // filename
+	Bytes []byte // bytes of file content
+}
+
+// ByteFiles returns ByteFile list from request body
+func (fb *FileBody) ByteFiles() ([]ByteFile, error) {
+	names := strings.Split(fb.NamesString, "\n")
+	encodedFiles := strings.Split(fb.EncodedFilesString, "\n")
+
+	byteFiles := make([]ByteFile, 0, len(encodedFiles))
+	for i, encodedFile := range encodedFiles {
+		fileBytes, err := base64.StdEncoding.DecodeString(encodedFile)
+		if err != nil {
+			// todo: warning log to file
+			continue
+		}
+		byteFiles = append(byteFiles, ByteFile{names[i], fileBytes})
+	}
+	return byteFiles, nil
+}
+
+func setFileHandler(c *gin.Context, logger *logrus.Entry) {
+	contentType := c.GetHeader("X-Content-Type")
+
+	var body FileBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logger.WithError(err).Warn("failed to bind file body")
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	// rd := bufio.NewReader(r.Body)
+	byteFiles, err := body.ByteFiles()
+	if err != nil {
+		logger.WithError(err).Warn("failed to get files from request")
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	paths := make([]string, 0, len(byteFiles))
+	for _, byteFile := range byteFiles {
+		path := getTempFilePath(string(byteFile.Name))
+		if err := ioutil.WriteFile(path, byteFile.Bytes, 0644); err != nil {
+			logger.WithError(err).WithField("path", path).Warn("failed to create file")
+			continue
+		}
+		paths = append(paths, path)
+	}
 
-	// var (
-	// 	version     string
-	// 	contentType string
-	// 	notify      string
-	// 	filename    string
-	// )
+	if err := utils.Clipboard().SetFiles(paths); err != nil {
+		logger.WithError(err).Warn("failed to set clipboard")
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
-	// q := r.URL.Query()
-	// version = q.Get("version")
-	// contentType = q.Get("type")
-	// filename = q.Get("filename")
+	var notify string
+	if contentType == typeMedia {
+		notify = "[图片媒体] 已复制到剪贴板"
+	} else {
+		notify = "[文件] 已复制到剪贴板"
+	}
 
-	// if len(filename) == 0 {
-	// 	filename = utils.RandStringBytes(16)
-	// }
-
-	// cleanTempFile()
-
-	// if version == "" || contentType == typeText {
-	// 	text, err := ioutil.ReadAll(r.Body)
-	// 	if err != nil {
-	// 		w.WriteHeader(http.StatusBadRequest)
-	// 		requestLogger.WithError(err).Warn("failed to read request body")
-	// 		return
-	// 	}
-
-	// 	if len(text) == 0 {
-	// 		notify = "粘贴内容为空"
-	// 	} else {
-	// 		notify = string(text)
-	// 	}
-
-	// 	if err := walk.Clipboard().SetText(string(text)); err != nil {
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		requestLogger.WithError(err).Warn("failed to set clipboard")
-	// 		return
-	// 	}
-
-	// 	requestLogger.WithField("text", string(text)).Info("set clipboard text")
-	// } else if contentType == typeFile || contentType == typeMedia {
-	// 	path := getTempFilePath(filename)
-	// 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.ModePerm)
-	// 	if err != nil {
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		requestLogger.WithError(err).Warn("failed create temporary file")
-	// 		return
-	// 	}
-	// 	defer file.Close()
-
-	// 	_, _ = io.Copy(file, rd)
-
-	// 	if contentType == typeMedia {
-	// 		notify = "[图片媒体] 已复制到剪贴板"
-	// 	} else {
-	// 		notify = "[文件] 已复制到剪贴板"
-	// 	}
-
-	// 	setLastFilename(filename)
-	// 	paths := []string{path, `D:\Projects\golang\clipboard-online\images\clipboard-icon.png`}
-	// 	if err := utils.Clipboard().SetFiles(paths); err != nil {
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		requestLogger.WithError(err).Warn("failed to set clipboard")
-	// 		return
-	// 	}
-
-	// 	requestLogger.WithField("file", path).Info("set clipboard file")
-	// } else {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	requestLogger.Warn("unsupported content type")
-	// 	return
-	// }
-
-	// if err := app.ni.ShowInfo("粘贴自我的设备", notify); err != nil {
-	// 	requestLogger.WithError(err).WithField("notify", notify).Warn("failed to send notification")
-	// }
-
-	// w.WriteHeader(http.StatusOK)
-	// return
+	defer sendPasteNotification(logger, c.GetString("clientName"), notify)
+	logger.WithField("paths", paths).Info("set clipboard file")
+	c.Status(http.StatusOK)
 }
 
 func notFoundHandler(c *gin.Context) {
@@ -251,10 +288,21 @@ func notFoundHandler(c *gin.Context) {
 	c.Status(http.StatusNotFound)
 }
 
-func writeContentType(w http.ResponseWriter, value []string) {
-	header := w.Header()
-	if val := header["Content-Type"]; len(val) == 0 {
-		header["Content-Type"] = value
+func sendCopyNotification(logger *log.Entry, client, notify string) {
+	sendNotification(logger, "复制", client, notify)
+}
+
+func sendPasteNotification(logger *log.Entry, client, notify string) {
+	sendNotification(logger, "粘贴", client, notify)
+}
+
+func sendNotification(logger *log.Entry, action, client, notify string) {
+	if notify == "" {
+		notify = action + "内容为空"
+	}
+	title := fmt.Sprintf("%s自 %s", action, client)
+	if err := app.ni.ShowInfo(title, notify); err != nil {
+		logger.WithError(err).WithField("notify", notify).Warn("failed to send notification")
 	}
 }
 
