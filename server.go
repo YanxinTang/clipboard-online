@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,7 +53,8 @@ func clientName() gin.HandlerFunc {
 
 func requestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("requestID", "ID")
+		randID := rand.Int()
+		c.Set("requestID", strconv.Itoa(randID))
 		c.Next()
 	}
 }
