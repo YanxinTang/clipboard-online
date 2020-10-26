@@ -15,23 +15,17 @@ const LogFile = "log.txt"
 const defaultTempDir = "./temp"
 
 type Config struct {
-	Port     string       `json:"port"`
-	LogLevel logrus.Level `json:"logLevel"`
-	TempDir  *string      `json:"tempDir"`
-}
-
-func (c *Config) GetTempDir() string {
-	if c.TempDir == nil {
-		return defaultTempDir
-	}
-
-	return *c.TempDir
+	Port           string       `json:"port"`
+	LogLevel       logrus.Level `json:"logLevel"`
+	TempDir        string       `json:"tempDir"`
+	ReserveHistory bool         `json:"reserveHistory"`
 }
 
 var DefaultConfig = Config{
-	Port:     "8086",
-	LogLevel: log.WarnLevel,
-	TempDir:  ToPtrString(defaultTempDir),
+	Port:           "8086",
+	LogLevel:       log.WarnLevel,
+	TempDir:        defaultTempDir,
+	ReserveHistory: false,
 }
 
 func ToPtrString(str string) *string {

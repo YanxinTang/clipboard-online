@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -240,6 +242,7 @@ func (fb *FileBody) ByteFiles() ([]ByteFile, error) {
 
 func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 	contentType := c.GetHeader("X-Content-Type")
+	cleanTempFiles(logger)
 
 	var body FileBody
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -261,8 +264,11 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 			logger.WithError(err).WithField("path", path).Warn("failed to create file")
 			continue
 		}
+		logger.WithField("path", path).Debug()
 		paths = append(paths, path)
 	}
+	// write paths to file
+	setLastFilenames(paths)
 
 	if err := utils.Clipboard().SetFiles(paths); err != nil {
 		logger.WithError(err).Warn("failed to set clipboard")
@@ -306,28 +312,22 @@ func sendNotification(logger *log.Entry, action, client, notify string) {
 	}
 }
 
-func getCurrentPath() string {
-	dir, _ := os.Getwd()
-	return dir
-}
-
 func getTempFilePath(filename string) string {
-	if !filepath.IsAbs(config.GetTempDir()) {
-		p, err := filepath.Abs(config.GetTempDir())
-		if err != nil {
-			return filepath.Join(getCurrentPath(), config.GetTempDir(), filename)
-		}
-		return filepath.Join(p, filename)
+	if !filepath.IsAbs(app.config.TempDir) {
+		// temp files path in exec path but not pwd
+		tempAbsPath := path.Join(execPath, app.config.TempDir)
+		return filepath.Join(tempAbsPath, filename)
 	}
-	return filepath.Join(config.GetTempDir(), filename)
+	return filepath.Join(app.config.TempDir, filename)
 }
 
-func setLastFilename(filename string) {
+func setLastFilenames(filenames []string) {
 	path := getTempFilePath("_filename.txt")
-	_ = ioutil.WriteFile(path, []byte(filename), os.ModePerm)
+	allFilenames := strings.Join(filenames, "\n")
+	_ = ioutil.WriteFile(path, []byte(allFilenames), os.ModePerm)
 }
 
-func cleanTempFile() {
+func cleanTempFiles(logger *logrus.Entry) {
 	tempDir := getTempFilePath("")
 	if a, err := os.Stat(tempDir); err != nil || !a.IsDir() {
 		_ = os.Mkdir(tempDir, os.ModePerm)
@@ -335,16 +335,18 @@ func cleanTempFile() {
 
 	path := getTempFilePath("_filename.txt")
 	if isExistFile(path) {
-		filename, err := ioutil.ReadFile(path)
-		if err != nil || len(filename) == 0 {
+		file, err := os.Open(path)
+		if err != nil {
+			logger.WithError(err).WithField("path", path).Warn("failed to open temp file")
 			return
 		}
-
-		delPath := getTempFilePath(string(filename))
-		if isExistFile(delPath) {
-			_ = os.Remove(delPath)
+		defer file.Close()
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			delPath := scanner.Text()
+			if err = os.Remove(delPath); err != nil {
+				logger.WithError(err).WithField("delPath", delPath).Warn("failed to delete specify path")
+			}
 		}
-
-		setLastFilename("")
 	}
 }
