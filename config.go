@@ -12,8 +12,7 @@ import (
 const ConfigFile = "config.json"
 const LogFile = "log.txt"
 
-const defaultTempDir = "./temp"
-
+// Config represents configuration for applicaton
 type Config struct {
 	Port           string       `json:"port"`
 	LogLevel       logrus.Level `json:"logLevel"`
@@ -21,15 +20,23 @@ type Config struct {
 	ReserveHistory bool         `json:"reserveHistory"`
 }
 
+// DefaultConfig is a default configuration for application
 var DefaultConfig = Config{
 	Port:           "8086",
 	LogLevel:       log.WarnLevel,
-	TempDir:        defaultTempDir,
+	TempDir:        "./temp",
 	ReserveHistory: false,
 }
 
-func ToPtrString(str string) *string {
-	return &str
+// DefaultConfigCopy returns a deep copy of DefaultConfig
+func DefaultConfigCopy() *Config {
+	config := Config{
+		Port:           DefaultConfig.Port,
+		LogLevel:       DefaultConfig.LogLevel,
+		TempDir:        DefaultConfig.TempDir,
+		ReserveHistory: DefaultConfig.ReserveHistory,
+	}
+	return &config
 }
 
 func loadConfig(path string) (*Config, error) {
@@ -47,11 +54,11 @@ func loadConfigFromFile(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	var config Config
-	if err := json.Unmarshal(configBytes, &config); err != nil {
+	config := DefaultConfigCopy()
+	if err := json.Unmarshal(configBytes, config); err != nil {
 		return nil, err
 	}
-	return &config, nil
+	return config, nil
 }
 
 func createConfigFile(path string) error {
