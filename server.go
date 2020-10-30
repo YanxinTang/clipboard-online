@@ -176,7 +176,7 @@ func readBase64FromFile(path string) (string, error) {
 
 // TextBody is a struct of request body when iOS send files to windows
 type TextBody struct {
-	Text string `json:"text"`
+	Text string `json:"data"`
 }
 
 func setHandler(c *gin.Context) {
@@ -193,7 +193,7 @@ func setHandler(c *gin.Context) {
 func setTextHandler(c *gin.Context, logger *logrus.Entry) {
 	var body TextBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		logger.WithError(err).Warn("failed to bind file body")
+		logger.WithError(err).Warn("failed to bind text body")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -215,31 +215,27 @@ func setTextHandler(c *gin.Context, logger *logrus.Entry) {
 
 // FileBody is a struct of request body when iOS send files to windows
 type FileBody struct {
-	NamesString        string `json:"names"` // Name1\nName2...
-	EncodedFilesString string `json:"files"` // File1Base64\nFile2Base64...
+	Files []File `json:"data"`
 }
 
-// ByteFile is a struct to save uploaded file in memory
-type ByteFile struct {
-	Name  string // filename
-	Bytes []byte // bytes of file content
+// File is a struct represtents request file
+type File struct {
+	Name   string `json:"name"` // filename
+	Base64 string `json:"base64"`
+	_bytes []byte `json:"-"` // don't use this directly. use *File.Bytes() to get bytes
 }
 
-// ByteFiles returns ByteFile list from request body
-func (fb *FileBody) ByteFiles() ([]ByteFile, error) {
-	names := strings.Split(fb.NamesString, "\n")
-	encodedFiles := strings.Split(fb.EncodedFilesString, "\n")
-
-	byteFiles := make([]ByteFile, 0, len(encodedFiles))
-	for i, encodedFile := range encodedFiles {
-		fileBytes, err := base64.StdEncoding.DecodeString(encodedFile)
-		if err != nil {
-			// todo: warning log to file
-			continue
-		}
-		byteFiles = append(byteFiles, ByteFile{names[i], fileBytes})
+// Bytes returns byte slice of file
+func (f *File) Bytes() ([]byte, error) {
+	if len(f._bytes) > 0 {
+		return f._bytes, nil
 	}
-	return byteFiles, nil
+	fileBytes, err := base64.StdEncoding.DecodeString(f.Base64)
+	if err != nil {
+		return []byte{}, nil
+	}
+	f._bytes = fileBytes
+	return fileBytes, nil
 }
 
 func setFileHandler(c *gin.Context, logger *logrus.Entry) {
@@ -253,20 +249,21 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 		return
 	}
 
-	byteFiles, err := body.ByteFiles()
-	if err != nil {
-		logger.WithError(err).Warn("failed to get files from request")
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	paths := make([]string, 0, len(byteFiles))
-	for _, byteFile := range byteFiles {
-		path := getTempFilePath(string(byteFile.Name))
-		if err := ioutil.WriteFile(path, byteFile.Bytes, 0644); err != nil {
-			logger.WithError(err).WithField("path", path).Warn("failed to create file")
+	paths := make([]string, 0, len(body.Files))
+	for _, file := range body.Files {
+		if file.Name == "-" && file.Base64 == "-" {
 			continue
 		}
-		logger.WithField("path", path).Debug()
+		path := getTempFilePath(file.Name)
+		fileBytes, err := file.Bytes()
+		if err != nil {
+			logger.WithField("filename", file.Name).Warn("failed to read file bytes")
+			continue
+		}
+		if err := ioutil.WriteFile(path, fileBytes, 0644); err != nil {
+			logger.WithError(err).WithField("path", path).Warn("failed to create fi le")
+			continue
+		}
 		paths = append(paths, path)
 	}
 	// write paths to file
