@@ -333,7 +333,7 @@ func cleanTempFiles(logger *logrus.Entry) {
 	}
 
 	path := getTempFilePath("_filename.txt")
-	if isExistFile(path) {
+	if utils.IsExistFile(path) {
 		file, err := os.Open(path)
 		if err != nil {
 			logger.WithError(err).WithField("path", path).Warn("failed to open temp file")

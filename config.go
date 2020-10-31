@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 
+	"github.com/YanxinTang/clipboard-online/utils"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -40,7 +40,7 @@ func DefaultConfigCopy() *Config {
 }
 
 func loadConfig(path string) (*Config, error) {
-	if isExistFile(path) {
+	if utils.IsExistFile(path) {
 		return loadConfigFromFile(path)
 	}
 	if err := createConfigFile(path); err != nil {
@@ -71,11 +71,4 @@ func createConfigFile(path string) error {
 		return err
 	}
 	return nil
-}
-
-func isExistFile(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
