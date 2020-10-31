@@ -181,6 +181,7 @@ type TextBody struct {
 
 func setHandler(c *gin.Context) {
 	requestLogger := log.WithField("requestID", c.GetString("requestID"))
+	cleanTempFiles(requestLogger)
 	contentType := c.GetHeader("X-Content-Type")
 	if contentType == typeText {
 		setTextHandler(c, requestLogger)
@@ -240,7 +241,6 @@ func (f *File) Bytes() ([]byte, error) {
 
 func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 	contentType := c.GetHeader("X-Content-Type")
-	cleanTempFiles(logger)
 
 	var body FileBody
 	if err := c.ShouldBindJSON(&body); err != nil {
