@@ -180,7 +180,11 @@ type TextBody struct {
 
 func setHandler(c *gin.Context) {
 	requestLogger := log.WithField("requestID", c.GetString("requestID"))
-	cleanTempFiles(requestLogger)
+
+	if !app.config.ReserveHistory {
+		cleanTempFiles(requestLogger)
+	}
+
 	contentType := c.GetHeader("X-Content-Type")
 	if contentType == typeText {
 		setTextHandler(c, requestLogger)
@@ -259,14 +263,20 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 			logger.WithField("filename", file.Name).Warn("failed to read file bytes")
 			continue
 		}
-		if err := ioutil.WriteFile(path, fileBytes, 0644); err != nil {
+		if err := newFile(path, fileBytes); err != nil {
 			logger.WithError(err).WithField("path", path).Warn("failed to create fi le")
 			continue
 		}
 		paths = append(paths, path)
 	}
-	// write paths to file
-	setLastFilenames(paths)
+
+	if app.config.ReserveHistory {
+		// clean paths in _filename.txt
+		setLastFilenames(nil)
+	} else {
+		// write paths to file
+		setLastFilenames(paths)
+	}
 
 	if err := utils.Clipboard().SetFiles(paths); err != nil {
 		logger.WithError(err).Warn("failed to set clipboard")
@@ -314,6 +324,30 @@ func setLastFilenames(filenames []string) {
 	path := app.GetTempFilePath("_filename.txt")
 	allFilenames := strings.Join(filenames, "\n")
 	_ = ioutil.WriteFile(path, []byte(allFilenames), os.ModePerm)
+}
+
+func newFile(path string, bytes []byte) error {
+	writePath := path
+
+	if utils.IsExistFile(path) {
+		// if path already exists, create new file with current time
+		writePath = addTime2Filename(path)
+	}
+	return ioutil.WriteFile(writePath, bytes, 0644)
+}
+
+/*
+	addTime2Filename will return the path which filename with current time
+	example: name.ext => name_2006-01-02 15:04:05.ext
+*/
+func addTime2Filename(path string) string {
+	dirPath := filepath.Dir(path)
+	basename := filepath.Base(path) // filename with ext
+	ext := filepath.Ext(basename)
+	name := strings.TrimSuffix(basename, ext)
+	now := time.Now().Format("2006-01-02_15-04-05")
+	newName := fmt.Sprintf("%s_%s%s", name, now, ext)
+	return filepath.Join(dirPath, newName)
 }
 
 func cleanTempFiles(logger *logrus.Entry) {
