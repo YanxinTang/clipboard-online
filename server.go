@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -254,7 +253,7 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 		if file.Name == "-" && file.Base64 == "-" {
 			continue
 		}
-		path := getTempFilePath(file.Name)
+		path := app.GetTempFilePath(file.Name)
 		fileBytes, err := file.Bytes()
 		if err != nil {
 			logger.WithField("filename", file.Name).Warn("failed to read file bytes")
@@ -311,28 +310,14 @@ func sendNotification(logger *log.Entry, action, client, notify string) {
 	}
 }
 
-func getTempFilePath(filename string) string {
-	if !filepath.IsAbs(app.config.TempDir) {
-		// temp files path in exec path but not pwd
-		tempAbsPath := path.Join(execPath, app.config.TempDir)
-		return filepath.Join(tempAbsPath, filename)
-	}
-	return filepath.Join(app.config.TempDir, filename)
-}
-
 func setLastFilenames(filenames []string) {
-	path := getTempFilePath("_filename.txt")
+	path := app.GetTempFilePath("_filename.txt")
 	allFilenames := strings.Join(filenames, "\n")
 	_ = ioutil.WriteFile(path, []byte(allFilenames), os.ModePerm)
 }
 
 func cleanTempFiles(logger *logrus.Entry) {
-	tempDir := getTempFilePath("")
-	if a, err := os.Stat(tempDir); err != nil || !a.IsDir() {
-		_ = os.Mkdir(tempDir, os.ModePerm)
-	}
-
-	path := getTempFilePath("_filename.txt")
+	path := app.GetTempFilePath("_filename.txt")
 	if utils.IsExistFile(path) {
 		file, err := os.Open(path)
 		if err != nil {

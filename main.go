@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/YanxinTang/clipboard-online/action"
+	"github.com/YanxinTang/clipboard-online/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
 	"github.com/sirupsen/logrus"
@@ -50,11 +51,16 @@ func init() {
 
 func main() {
 	var err error
+
 	app, err = NewApplication(config)
 	if err != nil {
 		log.WithError(err).Fatal("failed to create applicaton")
 	}
 	defer app.BeforeExit()
+
+	if err := utils.CreateDirectory(app.GetTempFilePath("")); err != nil {
+		log.WithError(err).Fatal("failed to create temp directory")
+	}
 
 	icon, err := walk.NewIconFromResourceId(3)
 	if err != nil {

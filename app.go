@@ -1,6 +1,9 @@
 package main
 
 import (
+	"path"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
 	log "github.com/sirupsen/logrus"
@@ -44,6 +47,15 @@ func (app *Application) AddActions(actions ...*walk.Action) error {
 		}
 	}
 	return nil
+}
+
+func (app *Application) GetTempFilePath(filename string) string {
+	if !filepath.IsAbs(app.config.TempDir) {
+		// temp files path in exec path but not pwd
+		tempAbsPath := path.Join(execPath, app.config.TempDir)
+		return filepath.Join(tempAbsPath, filename)
+	}
+	return filepath.Join(app.config.TempDir, filename)
 }
 
 func NewApplication(config *Config) (*Application, error) {

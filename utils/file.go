@@ -8,3 +8,10 @@ func IsExistFile(path string) bool {
 	}
 	return true
 }
+
+func CreateDirectory(path string) error {
+	if a, err := os.Stat(path); err != nil || !a.IsDir() {
+		return os.Mkdir(path, os.ModePerm)
+	}
+	return nil
+}
