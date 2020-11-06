@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -23,13 +25,16 @@ import (
 
 const (
 	apiVersion = "1"
-	typeText   = "text"
-	typeFile   = "file"
-	typeMedia  = "media"
+
+	typeText  = "text"
+	typeFile  = "file"
+	typeMedia = "media"
+
+	authAvailableTimeout int64 = 30
 )
 
 func setupRoute(engin *gin.Engine) {
-	engin.Use(clientName(), requestID(), logger(), gin.Recovery(), apiVersionChecker())
+	engin.Use(clientName(), requestID(), logger(), gin.Recovery(), apiVersionChecker(), auth())
 	engin.GET("/", getHandler)
 	engin.POST("/", setHandler)
 	engin.NoRoute(notFoundHandler)
@@ -67,6 +72,34 @@ func apiVersionChecker() gin.HandlerFunc {
 		}
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": "接口版本不匹配，请升级您的捷径",
+		})
+	}
+}
+
+func auth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		if app.config.Authkey == "" {
+			c.Next()
+			return
+		}
+
+		reqAuth := c.GetHeader("X-Auth")
+
+		timestamp := time.Now().Unix()
+		timeKey := timestamp / authAvailableTimeout
+
+		authCodeRaw := app.config.Authkey + "." + strconv.FormatInt(timeKey, 10)
+		authCodeHash := md5.Sum([]byte(authCodeRaw))
+		authCodeString := hex.EncodeToString(authCodeHash[:])
+
+		if authCodeString == reqAuth {
+			c.Next()
+			return
+		}
+
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"error": "操作被拒绝：Authkey 验证失败",
 		})
 	}
 }

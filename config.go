@@ -15,6 +15,7 @@ const LogFile = "log.txt"
 // Config represents configuration for applicaton
 type Config struct {
 	Port           string       `json:"port"`
+	Authkey        string       `json:"authkey"`
 	LogLevel       logrus.Level `json:"logLevel"`
 	TempDir        string       `json:"tempDir"`
 	ReserveHistory bool         `json:"reserveHistory"`
@@ -23,6 +24,7 @@ type Config struct {
 // DefaultConfig is a default configuration for application
 var DefaultConfig = Config{
 	Port:           "8086",
+	Authkey:        "",
 	LogLevel:       log.WarnLevel,
 	TempDir:        "./temp",
 	ReserveHistory: false,
@@ -32,6 +34,7 @@ var DefaultConfig = Config{
 func DefaultConfigCopy() *Config {
 	config := Config{
 		Port:           DefaultConfig.Port,
+		Authkey:        DefaultConfig.Authkey,
 		LogLevel:       DefaultConfig.LogLevel,
 		TempDir:        DefaultConfig.TempDir,
 		ReserveHistory: DefaultConfig.ReserveHistory,
