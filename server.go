@@ -336,11 +336,15 @@ func notFoundHandler(c *gin.Context) {
 }
 
 func sendCopyNotification(logger *log.Entry, client, notify string) {
-	sendNotification(logger, "复制", client, notify)
+	if app.config.Notify.Copy {
+		sendNotification(logger, "复制", client, notify)
+	}
 }
 
 func sendPasteNotification(logger *log.Entry, client, notify string) {
-	sendNotification(logger, "粘贴", client, notify)
+	if app.config.Notify.Paste {
+		sendNotification(logger, "粘贴", client, notify)
+	}
 }
 
 func sendNotification(logger *log.Entry, action, client, notify string) {

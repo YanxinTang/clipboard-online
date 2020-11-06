@@ -19,6 +19,12 @@ type Config struct {
 	LogLevel       logrus.Level `json:"logLevel"`
 	TempDir        string       `json:"tempDir"`
 	ReserveHistory bool         `json:"reserveHistory"`
+	Notify         ConfigNotify `json:"notify"`
+}
+
+type ConfigNotify struct {
+	Copy  bool `json:"copy"`
+	Paste bool `json:"paste"`
 }
 
 // DefaultConfig is a default configuration for application
@@ -28,6 +34,10 @@ var DefaultConfig = Config{
 	LogLevel:       log.WarnLevel,
 	TempDir:        "./temp",
 	ReserveHistory: false,
+	Notify: ConfigNotify{
+		Copy:  false,
+		Paste: false,
+	},
 }
 
 // DefaultConfigCopy returns a deep copy of DefaultConfig
@@ -38,6 +48,10 @@ func DefaultConfigCopy() *Config {
 		LogLevel:       DefaultConfig.LogLevel,
 		TempDir:        DefaultConfig.TempDir,
 		ReserveHistory: DefaultConfig.ReserveHistory,
+		Notify: ConfigNotify{
+			Copy:  DefaultConfig.Notify.Copy,
+			Paste: DefaultConfig.Notify.Paste,
+		},
 	}
 	return &config
 }
