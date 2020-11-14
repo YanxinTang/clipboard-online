@@ -134,6 +134,7 @@ func (c *ClipboardService) Files() (filenames []string, err error) {
 // SetText sets the current text data of the clipboard.
 func (c *ClipboardService) SetText(s string) error {
 	return c.withOpenClipboard(func() error {
+		win.EmptyClipboard()
 		utf16, err := syscall.UTF16FromString(s)
 		if err != nil {
 			return err
@@ -175,6 +176,7 @@ type DROPFILES struct {
 // SetFiles sets the current file drop data of the clipboard.
 func (c *ClipboardService) SetFiles(paths []string) error {
 	return c.withOpenClipboard(func() error {
+		win.EmptyClipboard()
 		// https://docs.microsoft.com/en-us/windows/win32/shell/clipboard#cf_hdrop
 		utf16 := []uint16{}
 		for _, path := range paths {
