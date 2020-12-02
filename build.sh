@@ -11,13 +11,16 @@ version=$(if [[ `git describe --exact-match 2>/dev/null` != "" ]]; then git desc
 output="$RELEASE_DIR/$prog.exe"
 mode="release"
 
-while getopts "hd" arg; do
+while getopts "hdv:" arg; do
   case $arg in
     h)
       echo "build [--debug]" 
       ;;
     d)
       mode="debug"
+      ;;
+    v)
+      version="$OPTARG"
       ;;
   esac
 done
