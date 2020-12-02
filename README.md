@@ -52,9 +52,42 @@ You can make customization by editing `config.json`
   - default: `"warning"`
   - values: `"panic"`, `"fatal"`, `"error"`, `"warning"`, `"info"`, `"debug"`, `"trace"`
 
+- `authkey`
+  - type: `string`
+  - default: `''`
+
+- `tempDir`
+  - type: `string`
+  - default: `./temp`
+
+- `reserveHistory`
+  - type: `Boolean`
+  - default: `false`
+
+- `notify`
+  - type: `object`
+  - children:
+    - `copy`
+      - type: `Bollean`
+      - default: `false`
+    - `paste`
+      - type: `Boolean`
+      - default: `false`
+
 ## API
 
 The default http server will listen `8086` port and you can't chanage that since hardcoded.
+
+### Common headers
+
+#### Required
+
+- `X-API-Version`: indicates version of api
+
+#### Optional
+
+- `X-Client-Name`: indicates name of device
+- `X-Auth`: hashed authkey. Value from `md5(config.authkey + timestamp/30)`
 
 ### 1. Get windows clipboard
 
@@ -65,7 +98,28 @@ The default http server will listen `8086` port and you can't chanage that since
 
 > Reponse
 
-- Body: `<clipboard text>`
+- Body: `json`
+
+```json
+// 200 ok
+
+{
+  "type": "text",
+  "data": "clipboard text on the server"
+}
+
+{
+  "type": "file",
+  "data": [
+    {
+      "name": "filename",
+      "content": "base64 string of file bytes"
+    }
+    ...
+  ]
+}
+
+```
 
 ### 2. Set windows clipboard
 
@@ -73,7 +127,33 @@ The default http server will listen `8086` port and you can't chanage that since
 
 - URL: `/`
 - Method: `POST`
-- Body: `text you want to set`
+- Headers:
+  - `X-Content-Type`: indicates type of request body content
+    - `required`
+    - values: `text`, `file`, `media`
+
+- Body: `json`
+
+For text:
+
+```json
+{
+  "data": "text you want to set"
+}
+```
+
+For file:
+
+```json
+{
+  "data": [
+    {
+      "name": "filename",
+      "base64": "base64 string of file bytes"
+    }
+  ]
+}
+```
 
 > Reponse
 

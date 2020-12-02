@@ -52,7 +52,40 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
   - 默认: `"warning"`
   - 可选: `"panic"`, `"fatal"`, `"error"`, `"warning"`, `"info"`, `"debug"`, `"trace"`
 
+- `authkey`
+  - type: `string`
+  - default: `''`
+
+- `tempDir`
+  - type: `string`
+  - default: `./temp`
+
+- `reserveHistory`
+  - type: `Boolean`
+  - default: `false`
+
+- `notify`
+  - type: `object`
+  - children:
+    - `copy`
+      - type: `Bollean`
+      - default: `false`
+    - `paste`
+      - type: `Boolean`
+      - default: `false`
+
 ## API
+
+### 公共 headers
+
+#### 必选
+
+- `X-API-Version`: indicates version of api
+
+#### 可选
+
+- `X-Client-Name`: indicates name of device
+- `X-Auth`: hashed authkey. Value from `md5(config.authkey + timestamp/30)`
 
 ### 1. 获取 Windows 剪切板
 
@@ -63,7 +96,28 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
 
 > Reponse
 
-- Body: `<clipboard text>`
+- Body: `json`
+
+```json
+// 200 ok
+
+{
+  "type": "text",
+  "data": "clipboard text on the server"
+}
+
+{
+  "type": "file",
+  "data": [
+    {
+      "name": "filename",
+      "content": "base64 string of file bytes"
+    }
+    ...
+  ]
+}
+
+```
 
 ### 2. 设置 Windows 剪切板
 
@@ -71,8 +125,32 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
 
 - URL: `/`
 - Method: `POST`
-- Body: `text you want to set`
+- Headers:
+  - `X-Content-Type`: indicates type of request body content
+    - `required`
+    - values: `text`, `file`, `media`
 
-> Reponse
+- Body: `json`
+
+For text:
+
+```json
+{
+  "data": "text you want to set"
+}
+```
+
+For file:
+
+```json
+{
+  "data": [
+    {
+      "name": "filename",
+      "base64": "base64 string of file bytes"
+    }
+  ]
+}
+```
 
 响应的 body 为空。如果剪切板设置成功，状态码将返回 `200`
