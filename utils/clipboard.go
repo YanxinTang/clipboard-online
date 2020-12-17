@@ -188,9 +188,11 @@ func (c *ClipboardService) SetFiles(paths []string) error {
 		}
 		utf16 = append(utf16, uint16(0))
 
-		size := unsafe.Sizeof(DROPFILES{}) + uintptr((len(utf16)+2)*2)
+		const dropFilesSize = unsafe.Sizeof(DROPFILES{}) - 4
 
-		hMem := win.GlobalAlloc(win.GMEM_MOVEABLE, size)
+		size := dropFilesSize + uintptr((len(utf16))*2+2)
+
+		hMem := win.GlobalAlloc(win.GHND, size)
 		if hMem == 0 {
 			return lastError("GlobalAlloc")
 		}
@@ -204,9 +206,10 @@ func (c *ClipboardService) SetFiles(paths []string) error {
 		win.MoveMemory(p, unsafe.Pointer(&zeroMem[0]), size)
 
 		pD := (*DROPFILES)(p)
-		pD.pFiles = unsafe.Sizeof(DROPFILES{})
-		pD.fWide = true
-		win.MoveMemory(unsafe.Pointer(uintptr(p)+unsafe.Sizeof(DROPFILES{})), unsafe.Pointer(&utf16[0]), uintptr(len(utf16)*2))
+		pD.pFiles = uint32(dropFilesSize)
+		pD.fWide = false
+		pD.fNC = true
+		win.MoveMemory(unsafe.Pointer(uintptr(p)+dropFilesSize), unsafe.Pointer(&utf16[0]), uintptr(len(utf16)*2))
 
 		win.GlobalUnlock(hMem)
 
@@ -216,7 +219,6 @@ func (c *ClipboardService) SetFiles(paths []string) error {
 
 			return lastError("SetClipboardData")
 		}
-
 		// The system now owns the memory referred to by hMem.
 
 		return nil
