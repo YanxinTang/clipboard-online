@@ -171,6 +171,7 @@ type DROPFILES struct {
 	pt     uintptr
 	fNC    bool
 	fWide  bool
+	_      uint32 // padding
 }
 
 // SetFiles sets the current file drop data of the clipboard.
@@ -206,7 +207,7 @@ func (c *ClipboardService) SetFiles(paths []string) error {
 		win.MoveMemory(p, unsafe.Pointer(&zeroMem[0]), size)
 
 		pD := (*DROPFILES)(p)
-		pD.pFiles = uint32(dropFilesSize)
+		pD.pFiles = dropFilesSize
 		pD.fWide = false
 		pD.fNC = true
 		win.MoveMemory(unsafe.Pointer(uintptr(p)+dropFilesSize), unsafe.Pointer(&utf16[0]), uintptr(len(utf16)*2))
