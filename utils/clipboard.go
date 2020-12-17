@@ -179,7 +179,7 @@ func (c *ClipboardService) SetFiles(paths []string) error {
 	return c.withOpenClipboard(func() error {
 		win.EmptyClipboard()
 		// https://docs.microsoft.com/en-us/windows/win32/shell/clipboard#cf_hdrop
-		utf16 := []uint16{}
+		var utf16 []uint16
 		for _, path := range paths {
 			_utf16, err := syscall.UTF16FromString(path)
 			if err != nil {
