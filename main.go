@@ -62,7 +62,7 @@ func main() {
 		log.WithError(err).Fatal("failed to create temp directory")
 	}
 
-	icon, err := walk.NewIconFromResourceId(3)
+	icon, err := walk.NewIconFromResourceId(2)
 	if err != nil {
 		log.WithError(err).Fatal("failed to get icon")
 	}
