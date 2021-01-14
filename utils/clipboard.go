@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"reflect"
 	"syscall"
 	"unsafe"
 
@@ -13,7 +15,7 @@ import (
 )
 
 var clipboard ClipboardService
-var Formats = []uint32{win.CF_HDROP, win.CF_UNICODETEXT}
+var Formats = []uint32{win.CF_HDROP, win.CF_DIBV5, win.CF_UNICODETEXT}
 
 // Clipboard returns an object that provides access to the system clipboard.
 func Clipboard() *ClipboardService {
@@ -73,6 +75,8 @@ func (c *ClipboardService) ContentType() (string, error) {
 	switch format {
 	case win.CF_HDROP:
 		return "file", nil
+	case win.CF_DIBV5:
+		return "CF_DIBV5", nil
 	case win.CF_UNICODETEXT:
 		return "text", nil
 	default:
@@ -99,6 +103,42 @@ func (c *ClipboardService) Text() (text string, err error) {
 		return nil
 	})
 
+	return
+}
+
+func (c *ClipboardService) Bitmap() (bmpBytes []byte, err error) {
+	err = c.withOpenClipboard(func() error {
+		hMem := win.HGLOBAL(win.GetClipboardData(win.CF_DIBV5))
+		if hMem == 0 {
+			return lastError("GetClipboardData")
+		}
+
+		p := win.GlobalLock(hMem)
+		if p == nil {
+			return lastError("GlobalLock()")
+		}
+		defer win.GlobalUnlock(hMem)
+
+		header := (*win.BITMAPV5HEADER)(unsafe.Pointer(p))
+
+		var data []byte
+		sh := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+		sh.Data = uintptr(p)
+		sh.Cap = int(header.BiSize + header.BiSizeImage)
+		sh.Len = int(header.BiSize + header.BiSizeImage)
+
+		bmpFileSize := 14 + header.BiSize + header.BiSizeImage
+		bmpBytes = make([]byte, bmpFileSize)
+
+		binary.LittleEndian.PutUint16(bmpBytes[0:], 0x4d42) // start with 'BM'
+		binary.LittleEndian.PutUint32(bmpBytes[2:], bmpFileSize)
+		binary.LittleEndian.PutUint16(bmpBytes[6:], 0)
+		binary.LittleEndian.PutUint16(bmpBytes[8:], 0)
+		binary.LittleEndian.PutUint32(bmpBytes[10:], 14+header.BiSize)
+		copy(bmpBytes[14:], data[:])
+
+		return nil
+	})
 	return
 }
 

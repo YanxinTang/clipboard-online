@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"image/png"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -21,6 +23,7 @@ import (
 	"github.com/lxn/walk"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/image/bmp"
 )
 
 const (
@@ -163,6 +166,40 @@ func getHandler(c *gin.Context) {
 			"data": str,
 		})
 		defer sendCopyNotification(logger, c.GetString("clientName"), str)
+		return
+	}
+
+	if contentType == "CF_DIBV5" {
+		bmpBytes, err := utils.Clipboard().Bitmap()
+		if err != nil {
+			logger.WithError(err).Warn("failed to get bmp bytes from clipboard")
+		}
+
+		bmpBytesReader := bytes.NewReader(bmpBytes)
+		bmpImage, err := bmp.Decode(bmpBytesReader)
+		if err != nil {
+			logger.WithError(err).Warn("failed to decode bmp")
+		}
+		pngBytesBuffer := new(bytes.Buffer)
+		if err = png.Encode(pngBytesBuffer, bmpImage); err != nil {
+			logger.WithError(err).Warn("failed to encode bmp as png")
+		}
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "无法获取剪切板内容"})
+		}
+
+		responseFiles := make([]ResponseFile, 0, 1)
+		responseFiles = append(responseFiles, ResponseFile{
+			"clipboard.png",
+			base64.StdEncoding.EncodeToString(pngBytesBuffer.Bytes()),
+		})
+
+		c.JSON(http.StatusOK, gin.H{
+			"type": "file",
+			"data": responseFiles,
+		})
+		defer sendCopyNotification(logger, c.GetString("clientName"), "[图片媒体] 被复制")
 		return
 	}
 
