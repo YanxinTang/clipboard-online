@@ -47,10 +47,7 @@ func clientName() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		urlEncodedClientName := c.GetHeader("X-Client-Name")
 		clientName, err := url.PathUnescape(urlEncodedClientName)
-		if err != nil {
-			clientName = "匿名设备"
-		}
-		if clientName == "" {
+		if err != nil || clientName == "" {
 			clientName = "匿名设备"
 		}
 		c.Set("clientName", clientName)
