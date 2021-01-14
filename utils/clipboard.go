@@ -143,7 +143,6 @@ func (c *ClipboardService) Bitmap() (bmpBytes []byte, err error) {
 }
 
 func (c *ClipboardService) Files() (filenames []string, err error) {
-	// var filenames = make([]string, 0, filecount)
 	err = c.withOpenClipboard(func() error {
 		hMem := win.HGLOBAL(win.GetClipboardData(win.CF_HDROP))
 		if hMem == 0 {
