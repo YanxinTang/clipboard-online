@@ -27,12 +27,7 @@ import (
 )
 
 const (
-	apiVersion = "1"
-
-	typeText  = "text"
-	typeFile  = "file"
-	typeMedia = "media"
-
+	apiVersion                 = "1"
 	authAvailableTimeout int64 = 30
 )
 
@@ -150,7 +145,7 @@ func getHandler(c *gin.Context) {
 		return
 	}
 
-	if contentType == typeText {
+	if contentType == utils.TypeText {
 		str, err := walk.Clipboard().Text()
 		if err != nil {
 			c.Status(http.StatusBadRequest)
@@ -166,7 +161,7 @@ func getHandler(c *gin.Context) {
 		return
 	}
 
-	if contentType == "CF_DIBV5" {
+	if contentType == utils.TypeBitmap {
 		bmpBytes, err := utils.Clipboard().Bitmap()
 		if err != nil {
 			logger.WithError(err).Warn("failed to get bmp bytes from clipboard")
@@ -203,7 +198,7 @@ func getHandler(c *gin.Context) {
 		return
 	}
 
-	if contentType == typeFile {
+	if contentType == utils.TypeFile {
 		// get path of files from clipboard
 		filenames, err := utils.Clipboard().Files()
 		if err != nil {
@@ -256,7 +251,7 @@ func setHandler(c *gin.Context) {
 	}
 
 	contentType := c.GetHeader("X-Content-Type")
-	if contentType == typeText {
+	if contentType == utils.TypeText {
 		setTextHandler(c, requestLogger)
 		return
 	}
@@ -355,7 +350,7 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 	}
 
 	var notify string
-	if contentType == typeMedia {
+	if contentType == utils.TypeMedia {
 		notify = "[图片媒体] 已复制到剪贴板"
 	} else {
 		notify = "[文件] 已复制到剪贴板"

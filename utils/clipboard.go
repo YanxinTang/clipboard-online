@@ -14,6 +14,14 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const (
+	TypeText    = "text"
+	TypeFile    = "file"
+	TypeMedia   = "media"
+	TypeBitmap  = "bitmap"
+	TypeUnknown = "unknown"
+)
+
 var clipboard ClipboardService
 var Formats = []uint32{win.CF_HDROP, win.CF_DIBV5, win.CF_UNICODETEXT}
 
@@ -74,13 +82,13 @@ func (c *ClipboardService) ContentType() (string, error) {
 	}
 	switch format {
 	case win.CF_HDROP:
-		return "file", nil
+		return TypeFile, nil
 	case win.CF_DIBV5:
-		return "CF_DIBV5", nil
+		return TypeBitmap, nil
 	case win.CF_UNICODETEXT:
-		return "text", nil
+		return TypeText, nil
 	default:
-		return "unknown", nil
+		return TypeUnknown, nil
 	}
 }
 
