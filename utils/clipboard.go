@@ -106,6 +106,13 @@ func (c *ClipboardService) Text() (text string, err error) {
 	return
 }
 
+func int32Abs(val int32) uint32 {
+	if val < 0 {
+		return uint32(-val)
+	}
+	return uint32(val)
+}
+
 func (c *ClipboardService) Bitmap() (bmpBytes []byte, err error) {
 	err = c.withOpenClipboard(func() error {
 		hMem := win.HGLOBAL(win.GetClipboardData(win.CF_DIBV5))
@@ -120,14 +127,34 @@ func (c *ClipboardService) Bitmap() (bmpBytes []byte, err error) {
 		defer win.GlobalUnlock(hMem)
 
 		header := (*win.BITMAPV5HEADER)(unsafe.Pointer(p))
+		var biSizeImage uint32
+		// BiSizeImage is 0 when use tencent TIM
+		if header.BiBitCount == 32 {
+			biSizeImage = 4 * int32Abs(header.BiWidth) * int32Abs(header.BiHeight)
+		} else {
+			biSizeImage = header.BiSizeImage
+		}
 
 		var data []byte
 		sh := (*reflect.SliceHeader)(unsafe.Pointer(&data))
 		sh.Data = uintptr(p)
-		sh.Cap = int(header.BiSize + header.BiSizeImage)
-		sh.Len = int(header.BiSize + header.BiSizeImage)
+		sh.Cap = int(header.BiSize + biSizeImage)
+		sh.Len = int(header.BiSize + biSizeImage)
 
-		bmpFileSize := 14 + header.BiSize + header.BiSizeImage
+		// In this place, we omit AlphaMask to make sure the BiV5Header can be decoded by image/bmp
+		// https://github.com/golang/image/blob/35266b937fa69456d24ed72a04d75eb6857f7d52/bmp/reader.go#L177
+		if header.BiCompression == 3 && header.BV4RedMask == 0xff0000 && header.BV4GreenMask == 0xff00 && header.BV4BlueMask == 0xff {
+			header.BiCompression = win.BI_RGB
+
+			// always set alpha channel value as 0xFF to make image untransparent
+			// to fix screenshot from PicPick is transparent when converted to png
+			pixelStartAt := header.BiSize
+			for i := pixelStartAt + 3; i < uint32(len(data)); i += 4 {
+				data[i] = 0xff
+			}
+		}
+
+		bmpFileSize := 14 + header.BiSize + biSizeImage
 		bmpBytes = make([]byte, bmpFileSize)
 
 		binary.LittleEndian.PutUint16(bmpBytes[0:], 0x4d42) // start with 'BM'
