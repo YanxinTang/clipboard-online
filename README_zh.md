@@ -25,6 +25,7 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
     - `cd clipboard-online`
     - `go get github.com/akavel/rsrc`
     - `./build.sh`
+      - PowerShell：`.\build.ps1`
     - 你可以在 `release` 目录下找到可执行文件
 
 ## 使用
