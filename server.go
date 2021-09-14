@@ -176,6 +176,8 @@ func getHandler(c *gin.Context) {
 		bmpImage, err := bmp.Decode(bmpBytesReader)
 		if err != nil {
 			logger.WithError(err).Warn("failed to decode bmp")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "无法获取剪切板内容"})
+			return
 		}
 		pngBytesBuffer := new(bytes.Buffer)
 		if err = png.Encode(pngBytesBuffer, bmpImage); err != nil {
@@ -184,6 +186,7 @@ func getHandler(c *gin.Context) {
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "无法获取剪切板内容"})
+			return
 		}
 
 		responseFiles := make([]ResponseFile, 0, 1)

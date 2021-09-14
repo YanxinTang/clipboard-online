@@ -33,10 +33,10 @@ clipboard-online is an application to share cilpboard text between Windows and i
 1. Run `clipboard-online` on your windows
 2. Setup shortcuts on you iPhone/iPad (Open link from safari)
     - Copy:
-      - iCloud: [https://www.icloud.com/shortcuts/547be9cbed034192ba7b8241c88ed1e5](https://www.icloud.com/shortcuts/547be9cbed034192ba7b8241c88ed1e5)
+      - iCloud: [https://www.icloud.com/shortcuts/a10cc2d0f1f94249b36489db102c367d](https://www.icloud.com/shortcuts/a10cc2d0f1f94249b36489db102c367d)
       - ![Copy](./images/copy.png)
     - Paste:
-      - iCloud: [https://www.icloud.com/shortcuts/a0e3553e18ac4acf9aa4562ae79aa8f7](https://www.icloud.com/shortcuts/a0e3553e18ac4acf9aa4562ae79aa8f7)
+      - iCloud: [https://www.icloud.com/shortcuts/45494dc6ff424ffba787b6526840c255](https://www.icloud.com/shortcuts/45494dc6ff424ffba787b6526840c255)
       - ![Paste](./images/paste.png)
 3. Set ip address and authkey (default is empty string)
 4. Have fun...😊
