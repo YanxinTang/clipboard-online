@@ -43,8 +43,8 @@ function build() {
     }
     else {
         build_release
-        Write-Output "Build complete"
     }
+    Write-Output "Build complete"
 }
   
 function build_debug() {

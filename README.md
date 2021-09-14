@@ -24,7 +24,8 @@ clipboard-online is an application to share cilpboard text between Windows and i
     - `git clone git@github.com:YanxinTang/clipboard-online.git`
     - `cd clipboard-online`
     - `go get github.com/akavel/rsrc`
-    - `./build.sh`
+    - Build
+      - Bash: `./build.sh`
       - PowerShell：`.\build.ps1`
     - You can find release bin at `release` directory
 

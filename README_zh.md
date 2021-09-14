@@ -24,7 +24,8 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
     - `git clone git@github.com:YanxinTang/clipboard-online.git`
     - `cd clipboard-online`
     - `go get github.com/akavel/rsrc`
-    - `./build.sh`
+    - 构建
+      - Bash: `./build.sh`
       - PowerShell：`.\build.ps1`
     - 你可以在 `release` 目录下找到可执行文件
 
