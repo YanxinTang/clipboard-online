@@ -329,7 +329,7 @@ func setFileHandler(c *gin.Context, logger *logrus.Entry) {
 			continue
 		}
 		if err := newFile(path, fileBytes); err != nil {
-			logger.WithError(err).WithField("path", path).Warn("failed to create fi le")
+			logger.WithError(err).WithField("path", path).Warn("failed to create file")
 			continue
 		}
 		paths = append(paths, path)
