@@ -39,22 +39,6 @@ var DefaultConfig = Config{
 	},
 }
 
-// DefaultConfigCopy returns a deep copy of DefaultConfig
-func DefaultConfigCopy() *Config {
-	config := Config{
-		Port:           DefaultConfig.Port,
-		Authkey:        DefaultConfig.Authkey,
-		LogLevel:       DefaultConfig.LogLevel,
-		TempDir:        DefaultConfig.TempDir,
-		ReserveHistory: DefaultConfig.ReserveHistory,
-		Notify: ConfigNotify{
-			Copy:  DefaultConfig.Notify.Copy,
-			Paste: DefaultConfig.Notify.Paste,
-		},
-	}
-	return &config
-}
-
 func loadConfig(path string) (*Config, error) {
 	if utils.IsExistFile(path) {
 		return loadConfigFromFile(path)
@@ -70,11 +54,10 @@ func loadConfigFromFile(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	config := DefaultConfigCopy()
-	if err := json.Unmarshal(configBytes, config); err != nil {
+	if err := json.Unmarshal(configBytes, &DefaultConfig); err != nil {
 		return nil, err
 	}
-	return config, nil
+	return &DefaultConfig, nil
 }
 
 func createConfigFile(path string) error {
