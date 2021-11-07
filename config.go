@@ -13,12 +13,13 @@ const LogFile = "log.txt"
 
 // Config represents configuration for applicaton
 type Config struct {
-	Port           string       `json:"port"`
-	Authkey        string       `json:"authkey"`
-	LogLevel       log.Level    `json:"logLevel"`
-	TempDir        string       `json:"tempDir"`
-	ReserveHistory bool         `json:"reserveHistory"`
-	Notify         ConfigNotify `json:"notify"`
+	Port                  string       `json:"port"`
+	Authkey               string       `json:"authkey"`
+	AuthkeyExpiredTimeout int64        `json:"authkeyExpiredTimeout"`
+	LogLevel              log.Level    `json:"logLevel"`
+	TempDir               string       `json:"tempDir"`
+	ReserveHistory        bool         `json:"reserveHistory"`
+	Notify                ConfigNotify `json:"notify"`
 }
 
 type ConfigNotify struct {
@@ -28,11 +29,12 @@ type ConfigNotify struct {
 
 // DefaultConfig is a default configuration for application
 var DefaultConfig = Config{
-	Port:           "8086",
-	Authkey:        "",
-	LogLevel:       log.WarnLevel,
-	TempDir:        "./temp",
-	ReserveHistory: false,
+	Port:                  "8086",
+	Authkey:               "",
+	AuthkeyExpiredTimeout: 30,
+	LogLevel:              log.WarnLevel,
+	TempDir:               "./temp",
+	ReserveHistory:        false,
 	Notify: ConfigNotify{
 		Copy:  false,
 		Paste: false,

@@ -64,6 +64,10 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
   - type: `string`
   - default: `''`
 
+- `authkeyExpiredTimeout`
+  - type: `int64`
+  - default: `30`
+
 - `tempDir`
   - type: `string`
   - default: `./temp`

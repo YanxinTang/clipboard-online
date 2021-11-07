@@ -63,6 +63,10 @@ You can make customization by editing `config.json`
   - type: `string`
   - default: `''`
 
+- `authkeyExpiredTimeout`
+  - type: `int64`
+  - default: `30`
+
 - `tempDir`
   - type: `string`
   - default: `./temp`

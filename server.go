@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	apiVersion                 = "1"
-	authAvailableTimeout int64 = 30
+	apiVersion = "1"
 )
 
 func setupRoute(engin *gin.Engine) {
@@ -81,7 +80,7 @@ func auth() gin.HandlerFunc {
 		reqAuth := c.GetHeader("X-Auth")
 
 		timestamp := time.Now().Unix()
-		timeKey := timestamp / authAvailableTimeout
+		timeKey := timestamp / app.config.AuthkeyExpiredTimeout
 
 		authCodeRaw := app.config.Authkey + "." + strconv.FormatInt(timeKey, 10)
 		authCodeHash := md5.Sum([]byte(authCodeRaw))
