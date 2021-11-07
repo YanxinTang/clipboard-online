@@ -21,7 +21,6 @@ import (
 	"github.com/YanxinTang/clipboard-online/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/image/bmp"
 )
@@ -109,7 +108,7 @@ func logger() gin.HandlerFunc {
 		statusCode := c.Writer.Status()
 		requestID := c.GetString("requestID")
 		clientName := c.GetString("clientName")
-		requestLogger := log.WithFields(logrus.Fields{
+		requestLogger := log.WithFields(log.Fields{
 			"requestID":  requestID,
 			"method":     c.Request.Method,
 			"statusCode": statusCode,
@@ -259,7 +258,7 @@ func setHandler(c *gin.Context) {
 	setFileHandler(c, requestLogger)
 }
 
-func setTextHandler(c *gin.Context, logger *logrus.Entry) {
+func setTextHandler(c *gin.Context, logger *log.Entry) {
 	var body TextBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		logger.WithError(err).Warn("failed to bind text body")
@@ -307,7 +306,7 @@ func (f *File) Bytes() ([]byte, error) {
 	return fileBytes, nil
 }
 
-func setFileHandler(c *gin.Context, logger *logrus.Entry) {
+func setFileHandler(c *gin.Context, logger *log.Entry) {
 	contentType := c.GetHeader("X-Content-Type")
 
 	var body FileBody
@@ -419,7 +418,7 @@ func addTime2Filename(path string) string {
 	return filepath.Join(dirPath, newName)
 }
 
-func cleanTempFiles(logger *logrus.Entry) {
+func cleanTempFiles(logger *log.Entry) {
 	path := app.GetTempFilePath("_filename.txt")
 	if utils.IsExistFile(path) {
 		file, err := os.Open(path)

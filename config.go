@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 
 	"github.com/YanxinTang/clipboard-online/utils"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +15,7 @@ const LogFile = "log.txt"
 type Config struct {
 	Port           string       `json:"port"`
 	Authkey        string       `json:"authkey"`
-	LogLevel       logrus.Level `json:"logLevel"`
+	LogLevel       log.Level    `json:"logLevel"`
 	TempDir        string       `json:"tempDir"`
 	ReserveHistory bool         `json:"reserveHistory"`
 	Notify         ConfigNotify `json:"notify"`
