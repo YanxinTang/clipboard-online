@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/YanxinTang/clipboard-online/utils"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const ConfigFile = "config.json"
@@ -16,7 +16,7 @@ type Config struct {
 	Port                  string       `json:"port"`
 	Authkey               string       `json:"authkey"`
 	AuthkeyExpiredTimeout int64        `json:"authkeyExpiredTimeout"`
-	LogLevel              log.Level    `json:"logLevel"`
+	LogLevel              logrus.Level `json:"logLevel"`
 	TempDir               string       `json:"tempDir"`
 	ReserveHistory        bool         `json:"reserveHistory"`
 	Notify                ConfigNotify `json:"notify"`
@@ -32,7 +32,7 @@ var DefaultConfig = Config{
 	Port:                  "8086",
 	Authkey:               "",
 	AuthkeyExpiredTimeout: 30,
-	LogLevel:              log.WarnLevel,
+	LogLevel:              logrus.WarnLevel,
 	TempDir:               "./temp",
 	ReserveHistory:        false,
 	Notify: ConfigNotify{

@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 )
 
 var app *Application
@@ -23,6 +22,7 @@ var execFullPath string
 var config *Config
 var mode string = "debug"
 var version string = ""
+var log = logrus.New()
 
 func init() {
 	execFullPath = os.Args[0]

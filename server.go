@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"image/png"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +20,7 @@ import (
 	"github.com/YanxinTang/clipboard-online/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/image/bmp"
 )
 
@@ -30,7 +29,7 @@ const (
 )
 
 func setupRoute(engin *gin.Engine) {
-	engin.Use(clientName(), requestID(), logger(), gin.Recovery(), apiVersionChecker(), auth())
+	engin.Use(clientName(), logger(), gin.Recovery(), apiVersionChecker(), auth())
 	engin.GET("/", getHandler)
 	engin.POST("/", setHandler)
 	engin.NoRoute(notFoundHandler)
@@ -44,14 +43,6 @@ func clientName() gin.HandlerFunc {
 			clientName = "匿名设备"
 		}
 		c.Set("clientName", clientName)
-		c.Next()
-	}
-}
-
-func requestID() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		randID := rand.Int()
-		c.Set("requestID", strconv.Itoa(randID))
 		c.Next()
 	}
 }
@@ -105,10 +96,8 @@ func logger() gin.HandlerFunc {
 		duration := time.Since(start)
 		clientIP := c.ClientIP()
 		statusCode := c.Writer.Status()
-		requestID := c.GetString("requestID")
 		clientName := c.GetString("clientName")
-		requestLogger := log.WithFields(log.Fields{
-			"requestID":  requestID,
+		requestLogger := log.WithFields(logrus.Fields{
 			"method":     c.Request.Method,
 			"statusCode": statusCode,
 			"clientIP":   clientIP,
@@ -135,10 +124,9 @@ type ResponseFile struct {
 type ResponseFiles []ResponseFile
 
 func getHandler(c *gin.Context) {
-	logger := log.WithField("requestID", c.GetString("requestID"))
 	contentType, err := utils.Clipboard().ContentType()
 	if err != nil {
-		logger.WithError(err).Info("failed to get content type of clipboard")
+		log.WithError(err).Info("failed to get content type of clipboard")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -147,34 +135,34 @@ func getHandler(c *gin.Context) {
 		str, err := walk.Clipboard().Text()
 		if err != nil {
 			c.Status(http.StatusBadRequest)
-			logger.WithError(err).Warn("failed to get clipboard")
+			log.WithError(err).Warn("failed to get clipboard")
 			return
 		}
-		logger.Info("get clipboard text")
+		log.Info("get clipboard text")
 		c.JSON(http.StatusOK, gin.H{
 			"type": "text",
 			"data": str,
 		})
-		defer sendCopyNotification(logger, c.GetString("clientName"), str)
+		defer sendCopyNotification(log, c.GetString("clientName"), str)
 		return
 	}
 
 	if contentType == utils.TypeBitmap {
 		bmpBytes, err := utils.Clipboard().Bitmap()
 		if err != nil {
-			logger.WithError(err).Warn("failed to get bmp bytes from clipboard")
+			log.WithError(err).Warn("failed to get bmp bytes from clipboard")
 		}
 
 		bmpBytesReader := bytes.NewReader(bmpBytes)
 		bmpImage, err := bmp.Decode(bmpBytesReader)
 		if err != nil {
-			logger.WithError(err).Warn("failed to decode bmp")
+			log.WithError(err).Warn("failed to decode bmp")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "无法获取剪切板内容"})
 			return
 		}
 		pngBytesBuffer := new(bytes.Buffer)
 		if err = png.Encode(pngBytesBuffer, bmpImage); err != nil {
-			logger.WithError(err).Warn("failed to encode bmp as png")
+			log.WithError(err).Warn("failed to encode bmp as png")
 		}
 
 		if err != nil {
@@ -192,7 +180,7 @@ func getHandler(c *gin.Context) {
 			"type": "file",
 			"data": responseFiles,
 		})
-		defer sendCopyNotification(logger, c.GetString("clientName"), "[图片媒体] 被复制")
+		defer sendCopyNotification(log, c.GetString("clientName"), "[图片媒体] 被复制")
 		return
 	}
 
@@ -200,7 +188,7 @@ func getHandler(c *gin.Context) {
 		// get path of files from clipboard
 		filenames, err := utils.Clipboard().Files()
 		if err != nil {
-			logger.WithError(err).Warn("failed to get path of files from clipboard")
+			log.WithError(err).Warn("failed to get path of files from clipboard")
 			c.Status(http.StatusBadRequest)
 			return
 		}
@@ -214,13 +202,13 @@ func getHandler(c *gin.Context) {
 			}
 			responseFiles = append(responseFiles, ResponseFile{filepath.Base(path), base64})
 		}
-		logger.Info("get clipboard files")
+		log.Info("get clipboard files")
 
 		c.JSON(http.StatusOK, gin.H{
 			"type": "file",
 			"data": responseFiles,
 		})
-		defer sendCopyNotification(logger, c.GetString("clientName"), "[文件] 被复制")
+		defer sendCopyNotification(log, c.GetString("clientName"), "[文件] 被复制")
 		return
 	}
 	c.JSON(http.StatusBadRequest, gin.H{"error": "无法识别剪切板内容"})
@@ -242,31 +230,29 @@ type TextBody struct {
 }
 
 func setHandler(c *gin.Context) {
-	requestLogger := log.WithField("requestID", c.GetString("requestID"))
-
 	if !app.config.ReserveHistory {
-		cleanTempFiles(requestLogger)
+		cleanTempFiles()
 	}
 
 	contentType := c.GetHeader("X-Content-Type")
 	if contentType == utils.TypeText {
-		setTextHandler(c, requestLogger)
+		setTextHandler(c)
 		return
 	}
 
-	setFileHandler(c, requestLogger)
+	setFileHandler(c)
 }
 
-func setTextHandler(c *gin.Context, logger *log.Entry) {
+func setTextHandler(c *gin.Context) {
 	var body TextBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		logger.WithError(err).Warn("failed to bind text body")
+		log.WithError(err).Warn("failed to bind text body")
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
 	if err := utils.Clipboard().SetText(body.Text); err != nil {
-		logger.WithError(err).Warn("failed to set clipboard")
+		log.WithError(err).Warn("failed to set clipboard")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -275,8 +261,8 @@ func setTextHandler(c *gin.Context, logger *log.Entry) {
 	if body.Text != "" {
 		notify = body.Text
 	}
-	defer sendPasteNotification(logger, c.GetString("clientName"), notify)
-	logger.WithField("text", body.Text).Info("set clipboard text")
+	defer sendPasteNotification(log, c.GetString("clientName"), notify)
+	log.WithField("text", body.Text).Info("set clipboard text")
 	c.Status(http.StatusOK)
 }
 
@@ -305,12 +291,12 @@ func (f *File) Bytes() ([]byte, error) {
 	return fileBytes, nil
 }
 
-func setFileHandler(c *gin.Context, logger *log.Entry) {
+func setFileHandler(c *gin.Context) {
 	contentType := c.GetHeader("X-Content-Type")
 
 	var body FileBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		logger.WithError(err).Warn("failed to bind file body")
+		log.WithError(err).Warn("failed to bind file body")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -323,11 +309,11 @@ func setFileHandler(c *gin.Context, logger *log.Entry) {
 		path := app.GetTempFilePath(file.Name)
 		fileBytes, err := file.Bytes()
 		if err != nil {
-			logger.WithField("filename", file.Name).Warn("failed to read file bytes")
+			log.WithField("filename", file.Name).Warn("failed to read file bytes")
 			continue
 		}
 		if err := newFile(path, fileBytes); err != nil {
-			logger.WithError(err).WithField("path", path).Warn("failed to create file")
+			log.WithError(err).WithField("path", path).Warn("failed to create file")
 			continue
 		}
 		paths = append(paths, path)
@@ -342,7 +328,7 @@ func setFileHandler(c *gin.Context, logger *log.Entry) {
 	}
 
 	if err := utils.Clipboard().SetFiles(paths); err != nil {
-		logger.WithError(err).Warn("failed to set clipboard")
+		log.WithError(err).Warn("failed to set clipboard")
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -354,30 +340,30 @@ func setFileHandler(c *gin.Context, logger *log.Entry) {
 		notify = "[文件] 已复制到剪贴板"
 	}
 
-	defer sendPasteNotification(logger, c.GetString("clientName"), notify)
-	logger.WithField("paths", paths).Info("set clipboard file")
+	defer sendPasteNotification(log, c.GetString("clientName"), notify)
+	log.WithField("paths", paths).Info("set clipboard file")
 	c.Status(http.StatusOK)
 }
 
 func notFoundHandler(c *gin.Context) {
-	requestLogger := log.WithFields(log.Fields{"request_id": rand.Int(), "user_ip": c.Request.RemoteAddr})
+	requestLogger := log.WithFields(logrus.Fields{"user_ip": c.Request.RemoteAddr})
 	requestLogger.Info("404 not found")
 	c.Status(http.StatusNotFound)
 }
 
-func sendCopyNotification(logger *log.Entry, client, notify string) {
+func sendCopyNotification(logger *logrus.Logger, client, notify string) {
 	if app.config.Notify.Copy {
 		sendNotification(logger, "复制", client, notify)
 	}
 }
 
-func sendPasteNotification(logger *log.Entry, client, notify string) {
+func sendPasteNotification(logger *logrus.Logger, client, notify string) {
 	if app.config.Notify.Paste {
 		sendNotification(logger, "粘贴", client, notify)
 	}
 }
 
-func sendNotification(logger *log.Entry, action, client, notify string) {
+func sendNotification(logger *logrus.Logger, action, client, notify string) {
 	if notify == "" {
 		notify = action + "内容为空"
 	}
@@ -417,12 +403,12 @@ func addTime2Filename(path string) string {
 	return filepath.Join(dirPath, newName)
 }
 
-func cleanTempFiles(logger *log.Entry) {
+func cleanTempFiles() {
 	path := app.GetTempFilePath("_filename.txt")
 	if utils.IsExistFile(path) {
 		file, err := os.Open(path)
 		if err != nil {
-			logger.WithError(err).WithField("path", path).Warn("failed to open temp file")
+			log.WithError(err).WithField("path", path).Warn("failed to open temp file")
 			return
 		}
 		defer file.Close()
@@ -430,7 +416,7 @@ func cleanTempFiles(logger *log.Entry) {
 		for scanner.Scan() {
 			delPath := scanner.Text()
 			if err = os.Remove(delPath); err != nil {
-				logger.WithError(err).WithField("delPath", delPath).Warn("failed to delete specify path")
+				log.WithError(err).WithField("delPath", delPath).Warn("failed to delete specify path")
 			}
 		}
 	}

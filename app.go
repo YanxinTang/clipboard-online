@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
-	log "github.com/sirupsen/logrus"
 )
 
 type Application struct {
