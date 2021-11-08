@@ -3,6 +3,7 @@ package main
 import (
 	"path"
 	"path/filepath"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lxn/walk"
@@ -11,27 +12,28 @@ import (
 type Application struct {
 	config *Config
 	*walk.MainWindow
-	ni         *walk.NotifyIcon
-	serverChan chan string
+	ni *walk.NotifyIcon
+	wg sync.WaitGroup
 }
 
 func (app *Application) RunHTTPServer() {
+	app.wg.Add(1)
 	go func() {
 		engin := gin.New()
 		setupRoute(engin)
-
 		if err := engin.Run(":" + app.config.Port); err != nil {
 			app.ni.ShowError("HTTP Server 启动失败", "您的应用可能不能正常运行")
+			app.Synchronize(func() {
+				walk.App().Exit(1)
+			})
 			log.WithError(err).Error("failed to start http server")
 			return
-		}
-		for range app.serverChan {
 		}
 	}()
 }
 
 func (app *Application) StopHTTPServer() {
-	close(app.serverChan)
+	app.wg.Done()
 }
 
 func (app *Application) BeforeExit() {
@@ -71,6 +73,5 @@ func NewApplication(config *Config) (*Application, error) {
 		return nil, err
 	}
 
-	app.serverChan = make(chan string)
 	return app, nil
 }
