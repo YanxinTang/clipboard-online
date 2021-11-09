@@ -34,10 +34,10 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
 1. 在 Windows 上运行 `clipboard-online`
 2. iPhone 或 iPad 上安装快捷指令 （在 safari 中打开链接）
     - Copy:
-      - iCloud: [https://www.icloud.com/shortcuts/1c8af082434f4d16bdbe05d09783c82d](https://www.icloud.com/shortcuts/1c8af082434f4d16bdbe05d09783c82d)
+      - iCloud: [https://www.icloud.com/shortcuts/f463a1e431c94c60b8a5c65305eb819f](https://www.icloud.com/shortcuts/f463a1e431c94c60b8a5c65305eb819f)
       - ![复制](./images/copy.png)
     - Paste:
-      - iCloud: [https://www.icloud.com/shortcuts/45494dc6ff424ffba787b6526840c255](https://www.icloud.com/shortcuts/45494dc6ff424ffba787b6526840c255)
+      - iCloud: [https://www.icloud.com/shortcuts/11cf614a6a2842f38d14a6796642ef71](https://www.icloud.com/shortcuts/11cf614a6a2842f38d14a6796642ef71)
       - ![粘贴](./images/paste.png)
 
 3. 设置 ip 地址和 authkey （默认是空字符串）
