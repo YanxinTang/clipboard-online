@@ -31,6 +31,8 @@ clipboard-online is an application to share cilpboard text between Windows and i
 
 ## Usage
 
+### For iOS users
+
 1. Run `clipboard-online` on your windows
 2. Setup shortcuts on you iPhone/iPad (Open link from safari)
     - Copy:
@@ -41,6 +43,14 @@ clipboard-online is an application to share cilpboard text between Windows and i
       - ![Paste](./images/paste.png)
 3. Set ip address and authkey (default is empty string)
 4. Have fun...😊
+
+### For Android users
+
+1. HTTP Shortcuts: [https://meta.appinn.net/t/topic/20322](https://meta.appinn.net/t/topic/20322)
+
+2. Tasker: [https://github.com/YanxinTang/clipboard-online/issues/26](https://github.com/YanxinTang/clipboard-online/issues/26)
+
+Thanks for the hard working by [@xiozf](https://github.com/xiozf), [@Befod](https://github.com/Befod) and someone else contributed for the Android approach!
 
 ## Configuration
 

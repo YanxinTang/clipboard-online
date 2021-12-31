@@ -31,6 +31,8 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
 
 ## 使用
 
+### iOS 用户
+
 1. 在 Windows 上运行 `clipboard-online`
 2. iPhone 或 iPad 上安装快捷指令 （在 safari 中打开链接）
     - Copy:
@@ -42,6 +44,14 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
 
 3. 设置 ip 地址和 authkey （默认是空字符串）
 4. 玩的开心...😊
+
+### Android 用户
+
+1. HTTP Shortcuts: [https://meta.appinn.net/t/topic/20322](https://meta.appinn.net/t/topic/20322)
+
+2. Tasker: [https://github.com/YanxinTang/clipboard-online/issues/26](https://github.com/YanxinTang/clipboard-online/issues/26)
+
+非常感谢 [@xiozf](https://github.com/xiozf)，[@Befod](https://github.com/Befod) 及其他贡献者，谢谢你们为 Android 平台提供的支持！
 
 ## 配置
 
