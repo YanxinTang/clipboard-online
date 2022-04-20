@@ -306,7 +306,7 @@ func setFileHandler(c *gin.Context) {
 		if file.Name == "-" && file.Base64 == "-" {
 			continue
 		}
-		path := app.GetTempFilePath(file.Name)
+		path := utils.LatestFilename(app.GetTempFilePath(file.Name))
 		fileBytes, err := file.Bytes()
 		if err != nil {
 			log.WithField("filename", file.Name).Warn("failed to read file bytes")
@@ -380,27 +380,7 @@ func setLastFilenames(filenames []string) {
 }
 
 func newFile(path string, bytes []byte) error {
-	writePath := path
-
-	if utils.IsExistFile(path) {
-		// if path already exists, create new file with current time
-		writePath = addTime2Filename(path)
-	}
-	return ioutil.WriteFile(writePath, bytes, 0644)
-}
-
-/*
-	addTime2Filename will return the path which filename with current time
-	example: name.ext => name_2006-01-02 15:04:05.ext
-*/
-func addTime2Filename(path string) string {
-	dirPath := filepath.Dir(path)
-	basename := filepath.Base(path) // filename with ext
-	ext := filepath.Ext(basename)
-	name := strings.TrimSuffix(basename, ext)
-	now := time.Now().Format("2006-01-02_15-04-05")
-	newName := fmt.Sprintf("%s_%s%s", name, now, ext)
-	return filepath.Join(dirPath, newName)
+	return ioutil.WriteFile(path, bytes, 0644)
 }
 
 func cleanTempFiles() {
