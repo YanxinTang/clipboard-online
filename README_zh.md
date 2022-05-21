@@ -39,7 +39,7 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
       - iCloud: [https://www.icloud.com/shortcuts/f463a1e431c94c60b8a5c65305eb819f](https://www.icloud.com/shortcuts/f463a1e431c94c60b8a5c65305eb819f)
       - ![复制](./images/copy.png)
     - Paste:
-      - iCloud: [https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5](https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5)
+      - iCloud: [https://www.icloud.com/shortcuts/dfba2badef8842a2ae5d333832ab9b61](https://www.icloud.com/shortcuts/dfba2badef8842a2ae5d333832ab9b61)
       - ![粘贴](./images/paste.png)
 
 3. 设置 ip 地址和 authkey （默认是空字符串）
