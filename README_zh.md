@@ -42,7 +42,7 @@ clipboard-online 是一款可以帮你在 💻Windows 和 📱iOS 之间分享�
       - iCloud: [https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5](https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5)
       - ![粘贴](./images/paste.png)
 
-3. 设置 ip 地址和 authkey （默认是空字符串）
+3. 设置 ip 地址和 authkey （默认是空字符串）。参考 [https://www.kejiwanjia.com/jiaocheng/zheteng/83030.html](https://www.kejiwanjia.com/jiaocheng/zheteng/83030.html)。
 4. 玩的开心...😊
 
 ### Android 用户

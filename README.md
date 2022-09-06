@@ -41,7 +41,7 @@ clipboard-online is an application to share cilpboard text between Windows and i
     - Paste:
       - iCloud: [https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5](https://www.icloud.com/shortcuts/90e7a2af70df4707a17dece8c263afc5)
       - ![Paste](./images/paste.png)
-3. Set ip address and authkey (default is empty string)
+3. Set ip address and authkey (default is empty string). Reference [https://www.kejiwanjia.com/jiaocheng/zheteng/83030.html](https://www.kejiwanjia.com/jiaocheng/zheteng/83030.html)
 4. Have fun...😊
 
 ### For Android users
